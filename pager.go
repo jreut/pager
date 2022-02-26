@@ -17,10 +17,27 @@ func init() {
 }
 
 type Person string
-type shift struct {
-	person Person
-	// [begin, end)
-	begin, end time.Time
+
+type exclusion struct {
+	p Person
+	t time.Time
+	d time.Duration
+}
+
+type exclusions []exclusion
+
+func (es exclusions) excluded(from, to time.Time) map[Person]struct{} {
+	out := map[Person]struct{}{}
+	for _, e := range es {
+		if _, ok := out[e.p]; ok {
+			continue
+		}
+		start, end := e.t, e.t.Add(e.d)
+		if (from.Before(start) && to.After(start)) || (from.Before(end) && to.After(end)) {
+			out[e.p] = struct{}{}
+		}
+	}
+	return out
 }
 
 // i think this is the least information we need to encode a schedule.
@@ -34,10 +51,17 @@ func (h Handoff) String() string {
 	return fmt.Sprintf("%s@%s", h.Recipient, h.At.Format(time.RFC3339))
 }
 
-// balance is 
 type balance map[Person]time.Duration
 
-func (b balance) next() Person {
+func (b balance) copy() balance {
+	out := make(balance)
+	for k, v := range b {
+		out[k] = v
+	}
+	return out
+}
+
+func (b balance) next() []Person {
 	var ks []Person
 	for k := range b {
 		ks = append(ks, k)
@@ -51,36 +75,30 @@ func (b balance) next() Person {
 		}
 		return b_i < b_j
 	})
-	return ks[0]
+	return ks
 }
 
-func newschedule(bal balance, start time.Time, dur time.Duration) schedule {
-	end := start.Add(dur)
-	local := start.In(nyc)
+func newschedule(
+	bal balance, exclusions exclusions, start time.Time, dur time.Duration,
+) (schedule, balance) {
+	bal = bal.copy()
 	var out schedule
-	recipient := bal.next()
-	out = append(out, Handoff{
-		Recipient: recipient,
-		At:        local,
-	})
-	last := local
-
-	for {
-		local = nextbreakpoint(local)
-		if local.Before(end) {
-			between := local.Sub(last)
-			bal[recipient] += between
-			recipient = bal.next()
-			out = append(out, Handoff{
-				Recipient: recipient,
-				At:        local,
-			})
-			last = local
-		} else {
-			break
+	is := intervals(start, dur, nextbreakpoint)
+	for _, i := range is {
+		excluded := exclusions.excluded(i.Start, i.End)
+		var p Person
+		for _, p = range bal.next() {
+			if _, ok := excluded[p]; !ok {
+				break
+			}
 		}
+		bal[p] += i.Duration()
+		out = append(out, Handoff{
+			Recipient: p,
+			At:        i.Start,
+		})
 	}
-	return out
+	return out, bal
 }
 
 func nextbreakpoint(after time.Time) time.Time {
@@ -114,3 +132,21 @@ func nextbreakpoint(after time.Time) time.Time {
 		panic(fmt.Sprintf("unhandled day of week: %s", after.Weekday()))
 	}
 }
+
+type interval struct{ Start, End time.Time }
+
+func intervals(start time.Time, d time.Duration, next func(time.Time) time.Time) []interval {
+	var out []interval
+	end := start.Add(d)
+	for start.Before(end) {
+		end := next(start)
+		if end.Before(start) {
+			panic(fmt.Sprintf("invariant violation: %s < %s", end, start))
+		}
+		out = append(out, interval{start, end})
+		start = end
+	}
+	return out
+}
+
+func (i interval) Duration() time.Duration { return i.End.Sub(i.Start) }
