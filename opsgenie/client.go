@@ -2,7 +2,6 @@ package opsgenie
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -50,7 +49,11 @@ func (self *Client) EnsureSchedule(
 				if err != nil {
 					return nil, errors.WithStack(err)
 				}
-				log.Printf("created schedule %+v", res)
+				return &schedule.Schedule{
+					Id:      res.Id,
+					Name:    res.Name,
+					Enabled: res.Enabled,
+				}, nil
 			} else {
 				return nil, errors.WithStack(err)
 			}
@@ -58,7 +61,6 @@ func (self *Client) EnsureSchedule(
 			return nil, errors.WithStack(err)
 		}
 	}
-	log.Printf("found schedule %+v", s)
 	return &s.Schedule, nil
 }
 

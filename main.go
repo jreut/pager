@@ -33,7 +33,7 @@ func run(ctx context.Context, key string) error {
 	if err != nil {
 		return err
 	}
-	s, err := client.EnsureSchedule(ctx)
+	s, err := client.EnsureSchedule(ctx, "reuter test", "Test SRE")
 	if err != nil {
 		return err
 	}
