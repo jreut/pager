@@ -2,27 +2,43 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
-	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"time"
 
+	"github.com/jreut/pager/opsgenie"
 	"github.com/opsgenie/opsgenie-go-sdk-v2/client"
-	"github.com/opsgenie/opsgenie-go-sdk-v2/schedule"
 )
 
+var cfg client.Config
+
 func main() {
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	key := flag.String("key", "", "OpsGenie integration API key")
 	flag.Parse()
-	client, err := schedule.NewClient(&client.Config{ApiKey: *key})
-	if err != nil {
-		panic(err)
+	cfg.ApiKey = *key
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+	if err := run(ctx, *key); err != nil {
+		log.Fatalf("%+v", err)
 	}
-	ctx := context.TODO()
-	expand := true
-	out, err := client.List(ctx, &schedule.ListRequest{Expand: &expand})
+	log.Println("ok")
+}
+
+func run(ctx context.Context, key string) error {
+	client, err := opsgenie.NewClient(key)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	buf, err := json.Marshal(out)
-	fmt.Printf("%s", buf)
+	s, err := client.EnsureSchedule(ctx)
+	if err != nil {
+		return err
+	}
+	if err := client.Override(ctx, s, "reuter@cockroachlabs.com", time.Now(), time.Now().AddDate(0, 0, 3)); err != nil {
+		return err
+	}
+	return nil
 }
