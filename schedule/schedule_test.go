@@ -1,4 +1,4 @@
-package pager
+package schedule
 
 import (
 	"testing"
