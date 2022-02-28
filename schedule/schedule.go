@@ -18,22 +18,69 @@ func init() {
 
 type Person string
 
+// Interval represents a span of time starting at Time, inclusive, and
+// ending at Time.Add(Duration), exclusive.
+type Interval struct {
+	time.Time
+	time.Duration
+}
+
+// Build a list of intervals starting at the given time and covering at
+// least the given duration.
+//
+// The next function is called with start to find the start of the next
+// interval, and so on until next returns a time exceeding start.Add(d).
+// The next function must monotonically increase. If not, this
+// function may enter an infinite loop.
+func intervals(start time.Time, d time.Duration, next func(time.Time) time.Time) []Interval {
+	var out []Interval
+	end := start.Add(d)
+	for start.Before(end) {
+		end := next(start)
+		if end.Before(start) {
+			panic(fmt.Sprintf("invariant violation: %s < %s", end, start))
+		}
+		out = append(out, Interval{start, end.Sub(start)})
+		start = end
+	}
+	return out
+}
+
+// Contains tests whether the given time is a member of the Interval.
+func (i Interval) Contains(t time.Time) bool {
+	if i.Equal(t) {
+		return true
+	}
+	if i.Before(t) && i.Add(i.Duration).After(t) {
+		return true
+	}
+	return false
+}
+
+// Conjoint tests whether the intervals overlap.
+func Conjoint(a, b Interval) bool {
+	s_a, e_a := a.Time, a.Add(a.Duration)
+	s_b, e_b := b.Time, b.Add(b.Duration)
+	if s_a == e_b || s_b == e_a {
+		return false
+	}
+	return a.Contains(s_b) || a.Contains(e_b) || b.Contains(s_a) || b.Contains(e_a)
+}
+
 type exclusion struct {
 	p Person
-	t time.Time
-	d time.Duration
+	Interval
 }
 
 type exclusions []exclusion
 
-func (es exclusions) excluded(from, to time.Time) map[Person]struct{} {
+func (es exclusions) excluded(i Interval) map[Person]struct{} {
 	out := map[Person]struct{}{}
 	for _, e := range es {
 		if _, ok := out[e.p]; ok {
 			continue
 		}
-		start, end := e.t, e.t.Add(e.d)
-		if (from.Before(start) && to.After(start)) || (from.Before(end) && to.After(end)) {
+		if Conjoint(e.Interval, i) {
 			out[e.p] = struct{}{}
 		}
 	}
@@ -78,27 +125,37 @@ func (b balance) next() []Person {
 	return ks
 }
 
-func newschedule(
-	bal balance, exclusions exclusions, start time.Time, dur time.Duration,
-) (schedule, balance) {
-	bal = bal.copy()
+type config struct {
+	start    time.Time
+	duration time.Duration
+	balance
+	exclusions
+}
+
+type result struct {
+	Schedule schedule
+	Balance  balance
+}
+
+func newschedule(cfg config) result {
+	bal := cfg.balance.copy()
 	var out schedule
-	is := intervals(start, dur, nextbreakpoint)
+	is := intervals(cfg.start, cfg.duration, nextbreakpoint)
 	for _, i := range is {
-		excluded := exclusions.excluded(i.Start, i.End)
+		excluded := cfg.exclusions.excluded(i)
 		var p Person
 		for _, p = range bal.next() {
 			if _, ok := excluded[p]; !ok {
 				break
 			}
 		}
-		bal[p] += i.Duration()
+		bal[p] += i.Duration
 		out = append(out, Handoff{
 			Recipient: p,
-			At:        i.Start,
+			At:        i.Time,
 		})
 	}
-	return out, bal
+	return result{out, bal}
 }
 
 func nextbreakpoint(after time.Time) time.Time {
@@ -132,21 +189,3 @@ func nextbreakpoint(after time.Time) time.Time {
 		panic(fmt.Sprintf("unhandled day of week: %s", after.Weekday()))
 	}
 }
-
-type interval struct{ Start, End time.Time }
-
-func intervals(start time.Time, d time.Duration, next func(time.Time) time.Time) []interval {
-	var out []interval
-	end := start.Add(d)
-	for start.Before(end) {
-		end := next(start)
-		if end.Before(start) {
-			panic(fmt.Sprintf("invariant violation: %s < %s", end, start))
-		}
-		out = append(out, interval{start, end})
-		start = end
-	}
-	return out
-}
-
-func (i interval) Duration() time.Duration { return i.End.Sub(i.Start) }
