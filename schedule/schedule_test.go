@@ -16,39 +16,38 @@ const (
 
 func TestNewSchedule(t *testing.T) {
 	t.Run("with our funky scheduling", func(t *testing.T) {
-		bal := balance{
+		bal := Balance{
 			alice:  -1 * 24 * time.Hour,
 			bob:    0,
 			cindy:  3 * 24 * time.Hour,
 			delila: 0,
 		}
 		start := time.Date(2022, 2, 26, 17, 24, 8, 0, time.UTC)
-		want := schedule{
+		want := Schedule{
 			{alice, start}, // alice=-1d, bob=0d, delila=0d, cindy=3d
-			{bob, time.Date(2022, 2, 28, 12, 0, 0, 0, nyc)},    // bob=0d, delila=0d, alice=~1d, cindy=3d
-			{delila, time.Date(2022, 3, 4, 12, 0, 0, 0, nyc)},  // delila=0d, alice=~1d, cindy=3d, bob=4d
-			{alice, time.Date(2022, 3, 7, 12, 0, 0, 0, nyc)},   // alice=~1d, cindy=3d, delila=3d, bob=4d
-			{cindy, time.Date(2022, 3, 11, 12, 0, 0, 0, nyc)},  // cindy=3d, delila=3d, bob=4d, alice=~5d
-			{delila, time.Date(2022, 3, 14, 12, 0, 0, 0, nyc)}, // delila=3d, bob=4d, alice=~5d, cindy=6d
-			{bob, time.Date(2022, 3, 18, 12, 0, 0, 0, nyc)},    // bob=4d, alice=~5d, cindy=6d, delila=7d
+			{bob, time.Date(2022, 2, 28, 12, 0, 0, 0, NYC)},    // bob=0d, delila=0d, alice=~1d, cindy=3d
+			{delila, time.Date(2022, 3, 4, 12, 0, 0, 0, NYC)},  // delila=0d, alice=~1d, cindy=3d, bob=4d
+			{alice, time.Date(2022, 3, 7, 12, 0, 0, 0, NYC)},   // alice=~1d, cindy=3d, delila=3d, bob=4d
+			{cindy, time.Date(2022, 3, 11, 12, 0, 0, 0, NYC)},  // cindy=3d, delila=3d, bob=4d, alice=~5d
+			{delila, time.Date(2022, 3, 14, 12, 0, 0, 0, NYC)}, // delila=3d, bob=4d, alice=~5d, cindy=6d
+			{bob, time.Date(2022, 3, 18, 12, 0, 0, 0, NYC)},    // bob=4d, alice=~5d, cindy=6d, delila=7d
 		}
-		got := newschedule(config{
-			next:     nextbreakpoint,
-			start:    start,
-			duration: 21 * 24 * time.Hour,
-			balance:  bal,
-		})
+		got := Builder{
+			Next:     MondayFridayShifts,
+			Interval: Interval{start, 21 * 24 * time.Hour},
+			Balance:  bal,
+		}.Build()
 		if diff := cmp.Diff(want, got.Schedule); diff != "" {
 			t.Fatalf("- want, + got:\n%s", diff)
 		}
 	})
 	t.Run("exclusions", func(t *testing.T) {
-		bal := balance{alice: 0, bob: 0}
+		bal := Balance{alice: 0, bob: 0}
 		start := time.Unix(0, 0)
-		got := newschedule(config{
-			next:    func(t time.Time) time.Time { return t.Add(time.Hour) },
-			balance: bal,
-			exclusions: exclusions{
+		got := Builder{
+			Next:    func(t time.Time) time.Time { return t.Add(time.Hour) },
+			Balance: bal,
+			Exclusions: []Exclusion{
 				// 0h  1h  2h  3h  4h
 				//  xx
 				{alice, Interval{start.Add(time.Hour / 4), time.Hour / 2}},
@@ -59,17 +58,16 @@ func TestNewSchedule(t *testing.T) {
 				//                 x
 				{alice, Interval{start.Add(4 * time.Hour), time.Hour / 4}},
 			},
-			start:    start,
-			duration: 6 * time.Hour,
-		})
-		want := result{schedule{
+			Interval: Interval{start, 6 * time.Hour},
+		}.Build()
+		want := Result{Schedule{
 			{bob, start.Add(0 * time.Hour)},   // alice is excluded in the middle of this interval
 			{bob, start.Add(1 * time.Hour)},   // alice is excluded from the start of this interval...
 			{bob, start.Add(2 * time.Hour)},   // ...to the middle of this interval
 			{alice, start.Add(3 * time.Hour)}, // alice has an exclusion starting at the end of this interval
 			{bob, start.Add(4 * time.Hour)},
 			{alice, start.Add(5 * time.Hour)},
-		}, balance{
+		}, Balance{
 			bob:   4 * time.Hour,
 			alice: 2 * time.Hour,
 		}}
@@ -96,16 +94,28 @@ func TestIntervals(t *testing.T) {
 			t.Fatalf("- want, + got:\n%s", diff)
 		}
 	})
-	t.Run("nextbreakpoint", func(t *testing.T) {
-		start := time.Date(2022, 2, 26, 9, 0, 0, 0, nyc)
+	t.Run("invalid", func(t *testing.T) {
+		defer func() {
+			p := recover()
+			if p == nil {
+				t.Fatal("expected panic")
+			}
+			t.Logf("panic recovery: %+v", p)
+		}()
+		intervals(time.Unix(0, 0), time.Hour, func(t time.Time) time.Time {
+			return t.Add(-time.Minute)
+		})
+	})
+	t.Run("MondayFridayShifts", func(t *testing.T) {
+		start := time.Date(2022, 2, 26, 9, 0, 0, 0, NYC)
 		d := 10 * 24 * time.Hour
 		want := []Interval{
 			{start, 51 * time.Hour},
-			{time.Date(2022, 2, 28, 12, 0, 0, 0, nyc), 4 * 24 * time.Hour},
-			{time.Date(2022, 3, 4, 12, 0, 0, 0, nyc), 3 * 24 * time.Hour},
-			{time.Date(2022, 3, 7, 12, 0, 0, 0, nyc), 4 * 24 * time.Hour},
+			{time.Date(2022, 2, 28, 12, 0, 0, 0, NYC), 4 * 24 * time.Hour},
+			{time.Date(2022, 3, 4, 12, 0, 0, 0, NYC), 3 * 24 * time.Hour},
+			{time.Date(2022, 3, 7, 12, 0, 0, 0, NYC), 4 * 24 * time.Hour},
 		}
-		got := intervals(start, d, nextbreakpoint)
+		got := intervals(start, d, MondayFridayShifts)
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Fatalf("- want, + got:\n%s", diff)
 		}
@@ -143,7 +153,7 @@ func TestInterval(t *testing.T) {
 			{t4, false},
 		} {
 			t.Run("", func(t *testing.T) {
-				if b.Contains(tt.Time) != tt.bool {
+				if b.contains(tt.Time) != tt.bool {
 					t.Fatalf("want %t, got %t", tt.bool, !tt.bool)
 				}
 			})
@@ -163,8 +173,8 @@ func TestInterval(t *testing.T) {
 			{c, d, true},
 		} {
 			t.Run("", func(t *testing.T) {
-				left := Conjoint(tt.a, tt.b)
-				right := Conjoint(tt.b, tt.a)
+				left := conjoint(tt.a, tt.b)
+				right := conjoint(tt.b, tt.a)
 				if (left != right) || (left != tt.want) {
 					t.Fatalf("want %t, got %t,%t", tt.want, left, right)
 				}
