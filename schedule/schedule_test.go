@@ -15,7 +15,7 @@ const (
 )
 
 func TestNewSchedule(t *testing.T) {
-	t.Run("simple", func(t *testing.T) {
+	t.Run("with our funky scheduling", func(t *testing.T) {
 		bal := balance{
 			alice:  -1 * 24 * time.Hour,
 			bob:    0,
@@ -33,6 +33,7 @@ func TestNewSchedule(t *testing.T) {
 			{bob, time.Date(2022, 3, 18, 12, 0, 0, 0, nyc)},    // bob=4d, alice=~5d, cindy=6d, delila=7d
 		}
 		got := newschedule(config{
+			next:     nextbreakpoint,
 			start:    start,
 			duration: 21 * 24 * time.Hour,
 			balance:  bal,
@@ -43,22 +44,34 @@ func TestNewSchedule(t *testing.T) {
 	})
 	t.Run("exclusions", func(t *testing.T) {
 		bal := balance{alice: 0, bob: 0}
-		start := time.Date(2022, 2, 25, 12, 0, 0, 0, nyc)
+		start := time.Unix(0, 0)
 		got := newschedule(config{
+			next:    func(t time.Time) time.Time { return t.Add(time.Hour) },
 			balance: bal,
 			exclusions: exclusions{
-				{alice, Interval{start, 3 * 24 * time.Hour}},
+				// 0h  1h  2h  3h  4h
+				//  xx
+				{alice, Interval{start.Add(time.Hour / 4), time.Hour / 2}},
+				// 0h  1h  2h  3h  4h
+				//     xxxxxx
+				{alice, Interval{start.Add(time.Hour), 3 * time.Hour / 2}},
+				// 0h  1h  2h  3h  4h
+				//                 x
+				{alice, Interval{start.Add(4 * time.Hour), time.Hour / 4}},
 			},
 			start:    start,
-			duration: 8 * 24 * time.Hour,
+			duration: 6 * time.Hour,
 		})
 		want := result{schedule{
-			{bob, start}, // alice is excluded during this time
-			{alice, start.AddDate(0, 0, 3)},
-			{bob, start.AddDate(0, 0, 7)},
+			{bob, start.Add(0 * time.Hour)},   // alice is excluded in the middle of this interval
+			{bob, start.Add(1 * time.Hour)},   // alice is excluded from the start of this interval...
+			{bob, start.Add(2 * time.Hour)},   // ...to the middle of this interval
+			{alice, start.Add(3 * time.Hour)}, // alice has an exclusion starting at the end of this interval
+			{bob, start.Add(4 * time.Hour)},
+			{alice, start.Add(5 * time.Hour)},
 		}, balance{
-			bob:   6 * 24 * time.Hour,
-			alice: 4 * 24 * time.Hour,
+			bob:   4 * time.Hour,
+			alice: 2 * time.Hour,
 		}}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Fatalf("- want, + got:\n%s", diff)

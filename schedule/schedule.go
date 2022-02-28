@@ -130,6 +130,7 @@ type config struct {
 	duration time.Duration
 	balance
 	exclusions
+	next func(time.Time) time.Time
 }
 
 type result struct {
@@ -140,7 +141,7 @@ type result struct {
 func newschedule(cfg config) result {
 	bal := cfg.balance.copy()
 	var out schedule
-	is := intervals(cfg.start, cfg.duration, nextbreakpoint)
+	is := intervals(cfg.start, cfg.duration, cfg.next)
 	for _, i := range is {
 		excluded := cfg.exclusions.excluded(i)
 		var p Person
