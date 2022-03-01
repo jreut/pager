@@ -33,26 +33,28 @@ func main() {
 	case "generate":
 		from := flag.String("from", time.Now().Format(time.RFC3339), "RFC3339-formatted time to start generating the schedule")
 		dur := flag.Duration("for", 28*2*24*time.Hour, "length of time to generate")
+		balpath := flag.String("balance", "data/balance.csv", "path to balance file")
+		espath := flag.String("exclusions", "data/exclusions.csv", "path to exclusions file")
 		flag.CommandLine.Parse(os.Args[2:])
 		start, err := time.Parse(time.RFC3339, *from)
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		bal, err := os.Open(*balpath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer bal.Close()
+		es, err := os.Open(*espath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer bal.Close()
+
 		if err := generate(os.Stdout, schedule.Interval{
 			Time: start, Duration: *dur,
-		}, schedule.Balance{ // generate the balance from a recorded starting point and then by processing the schedule up to this point
-			"carp":    0,
-			"darius":  6 * time.Hour,
-			"jason":   -4 * 24 * time.Hour,
-			"joel":    12 * time.Hour,
-			"josh":    -18 * time.Hour,
-			"logston": 3 * 24 * time.Hour,
-			"reuter":  -3 * 24 * time.Hour,
-		}, []schedule.Exclusion{ // read the exclusions from the filesystem
-			schedule.Exclude("reuter", time.Date(2022, 3, 18, 0, 0, 0, 0, schedule.NYC), time.Date(2022, 3, 22, 0, 0, 0, 0, schedule.NYC)),
-			schedule.Exclude("logston", time.Date(2022, 6, 1, 0, 0, 0, 0, time.UTC), time.Date(2022, 7, 1, 0, 0, 0, 0, time.UTC)),
-		}); err != nil {
+		}, bal, es); err != nil {
 			log.Fatalf("%+v", err)
 		}
 	}
@@ -74,7 +76,15 @@ func og(ctx context.Context, key string) error {
 	return nil
 }
 
-func generate(w io.Writer, i schedule.Interval, b schedule.Balance, es []schedule.Exclusion) error {
+func generate(w io.Writer, i schedule.Interval, balance, exclusions io.Reader) error {
+	es, err := schedule.ExclusionsFromCSV(exclusions)
+	if err != nil {
+		return err
+	}
+	b, err := schedule.BalanceFromCSV(balance)
+	if err != nil {
+		return err
+	}
 	res := schedule.Builder{
 		Interval:   i,
 		Next:       schedule.MondayFridayShifts,

@@ -132,9 +132,52 @@ func Exclude(p Person, start, end time.Time) Exclusion {
 	return Exclusion{p, Interval{start, end.Sub(start)}}
 }
 
+func ExclusionsFromCSV(r io.Reader) ([]Exclusion, error) {
+	csv := csv.NewReader(r)
+	csv.FieldsPerRecord = 3
+	all, err := csv.ReadAll()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	var out []Exclusion
+	for _, r := range all {
+		t, err := time.Parse(time.RFC3339, r[0])
+		if err != nil {
+			return nil, errors.Wrapf(err, "parsing time from %q", r)
+		}
+		d, err := time.ParseDuration(r[1])
+		if err != nil {
+			return nil, errors.Wrapf(err, "parsing duration from %q", r)
+		}
+		out = append(out, Exclusion{
+			Person:   Person(r[2]),
+			Interval: Interval{t, d},
+		})
+	}
+	return out, nil
+}
+
 // Balance is a record of relatively how much oncall time each person
 // has accrued.
 type Balance map[Person]time.Duration
+
+func BalanceFromCSV(r io.Reader) (Balance, error) {
+	csv := csv.NewReader(r)
+	csv.FieldsPerRecord = 2
+	all, err := csv.ReadAll()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	out := make(Balance)
+	for _, r := range all {
+		d, err := time.ParseDuration(r[1])
+		if err != nil {
+			return nil, errors.Wrapf(err, "parsing duration from %q", r)
+		}
+		out[Person(r[0])] = d
+	}
+	return out, nil
+}
 
 func (b Balance) copy() Balance {
 	out := make(Balance)
