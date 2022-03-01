@@ -1,9 +1,13 @@
 package schedule
 
 import (
+	"encoding/csv"
 	"fmt"
+	"io"
 	"sort"
 	"time"
+
+	"github.com/cockroachdb/errors"
 )
 
 var NYC *time.Location
@@ -18,6 +22,38 @@ func init() {
 
 // Schedule is a sequence of handoffs.
 type Schedule []Handoff
+
+func FromCSV(r io.Reader) (Schedule, error) {
+	csv := csv.NewReader(r)
+	csv.FieldsPerRecord = 2
+	all, err := csv.ReadAll()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	var out Schedule
+	for _, r := range all {
+		t, err := time.Parse(time.RFC3339, r[0])
+		if err != nil {
+			return nil, errors.Wrapf(err, "parsing time from %q", r)
+		}
+		out = append(out, Handoff{At: t, Recipient: Person(r[1])})
+	}
+	return out, err
+}
+
+func (s Schedule) WriteCSV(w io.Writer) error {
+	out := csv.NewWriter(w)
+	defer out.Flush()
+	for _, h := range s {
+		if err := out.Write([]string{
+			h.At.Format(time.RFC3339),
+			string(h.Recipient),
+		}); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
 
 // Handoff represents the beginning of a shift. To know who long this
 // shift is, one must know when the next handoff is.

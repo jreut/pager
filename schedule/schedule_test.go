@@ -1,6 +1,7 @@
 package schedule
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -8,10 +9,10 @@ import (
 )
 
 const (
-	alice  Person = "alice"
-	bob           = "bob"
-	cindy         = "cindy"
-	delila        = "delila"
+	alice  = "alice"
+	bob    = "bob"
+	cindy  = "cindy"
+	delila = "delila"
 )
 
 func TestNewSchedule(t *testing.T) {
@@ -75,6 +76,34 @@ func TestNewSchedule(t *testing.T) {
 			t.Fatalf("- want, + got:\n%s", diff)
 		}
 	})
+}
+
+func TestMarshalSchedule(t *testing.T) {
+	before := Schedule{
+		{alice, time.Date(2022, 2, 26, 12, 0, 0, 0, NYC)},
+		{bob, time.Date(2022, 2, 28, 12, 0, 0, 0, NYC)},
+		{delila, time.Date(2022, 3, 4, 12, 0, 0, 0, NYC)},
+		{alice, time.Date(2022, 3, 7, 12, 0, 0, 0, NYC)},
+	}
+	var buf bytes.Buffer
+	if err := before.WriteCSV(&buf); err != nil {
+		t.Fatal(err)
+	}
+	want := `2022-02-26T12:00:00-05:00,alice
+2022-02-28T12:00:00-05:00,bob
+2022-03-04T12:00:00-05:00,delila
+2022-03-07T12:00:00-05:00,alice
+`
+	if diff := cmp.Diff(want, buf.String()); diff != "" {
+		t.Fatalf("- want, + got:\n%s", diff)
+	}
+	after, err := FromCSV(&buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(before, after); diff != "" {
+		t.Fatalf("- want, + got:\n%s", diff)
+	}
 }
 
 func TestIntervals(t *testing.T) {
