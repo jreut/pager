@@ -1,3 +1,0 @@
-test:
-	go test ./...
-	bash test.sh
