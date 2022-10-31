@@ -3,15 +3,14 @@ package main_test
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"testing"
 
 	"github.com/jreut/pager/v2/assert"
+	"github.com/jreut/pager/v2/internal/save"
 )
 
 func TestIntegration(t *testing.T) {
@@ -45,7 +44,7 @@ func TestIntegration(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Nil(t, f.Close())
 			t.Log(f.Name())
-			db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_fk=true", f.Name()))
+			db, err := save.Open(f.Name(), nil)
 			assert.Nil(t, err)
 			defer db.Close()
 			schema, err := os.ReadFile("schema.sql")
