@@ -2,16 +2,13 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"time"
 
 	"github.com/jreut/pager/v2/internal/save"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
@@ -38,7 +35,7 @@ func main() {
 		log.Fatal("usage: TODO")
 	}
 
-	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_fk=true", dbpath))
+	db, err := save.Open(dbpath, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,7 +75,7 @@ func main() {
 		if *who == "" {
 			log.Fatal("provide -who")
 		}
-		if end != empty && *dur != 0 {
+		if end == empty && *dur == 0 {
 			log.Fatal("provide one of -end or -for")
 		}
 		if *dur != 0 {

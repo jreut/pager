@@ -1,9 +1,7 @@
 all: test
 
 test: internal/save
-	go test ./...
-
-test/record:
+	find . -type d -name testdata | xargs rm -rv
 	UPDATE_GOLDEN=1 go test ./...
 	go test ./...
 

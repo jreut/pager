@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -86,7 +87,7 @@ func TestAddShift(t *testing.T) {
 
 func testdb(t *testing.T, ctx context.Context) *sql.DB {
 	t.Helper()
-	db, err := sql.Open("sqlite3", ":memory:?cache=shared&_fk=true")
+	db, err := save.Open(":memory:", url.Values{"cache": []string{"shared"}})
 	assert.Nil(t, err)
 	t.Cleanup(func() { db.Close() })
 	schema, err := os.ReadFile("schema.sql")

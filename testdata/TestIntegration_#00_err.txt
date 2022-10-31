@@ -1,2 +1,0 @@
-main.go:38: usage: TODO
-exit status 1
