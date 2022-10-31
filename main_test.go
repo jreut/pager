@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jreut/pager/v2/assert"
-	"github.com/jreut/pager/v2/internal/save"
+	"github.com/jreut/pager/v2/pkg/assert"
+	"github.com/jreut/pager/v2/pkg/save"
 )
 
 func TestTimeflag(t *testing.T) {

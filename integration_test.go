@@ -9,8 +9,8 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/jreut/pager/v2/assert"
-	"github.com/jreut/pager/v2/internal/save"
+	"github.com/jreut/pager/v2/pkg/assert"
+	"github.com/jreut/pager/v2/pkg/save"
 )
 
 func TestIntegration(t *testing.T) {

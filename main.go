@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/jreut/pager/v2/internal/save"
+	"github.com/jreut/pager/v2/pkg/save"
 )
 
 var (

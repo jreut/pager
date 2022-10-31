@@ -1,14 +1,14 @@
 all: test
 
-test: internal/save
+test: pkg/save
 	find . -type d -name testdata | xargs rm -rv
 	UPDATE_GOLDEN=1 go test ./...
 	go test ./...
 
-run: internal/save db.sqlite3
+run: pkg/save db.sqlite3
 	go run .
 
-internal/save: bin/sqlc schema.sql sqlc.yaml
+pkg/save: bin/sqlc schema.sql sqlc.yaml
 	bin/sqlc generate
 
 bin/sqlc:
