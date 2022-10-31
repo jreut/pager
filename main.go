@@ -14,13 +14,31 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var (
+	deterministic bool
+	dbpath        = "db.sqlite3"
+)
+
+func init() {
+	if os.Getenv("DETERMINISTIC") == "1" {
+		deterministic = true
+	}
+	if deterministic {
+		log.SetFlags(log.Lshortfile)
+	} else {
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
+	}
+	if v, ok := os.LookupEnv("DB"); ok {
+		dbpath = v
+	}
+}
+
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	if len(os.Args) <= 1 {
 		log.Fatal("usage: TODO")
 	}
 
-	db, err := sql.Open("sqlite3", "file:db.sqlite3?_fk=true")
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_fk=true", dbpath))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,6 +50,9 @@ func main() {
 	switch mode := os.Args[1]; mode {
 	case "add-person":
 		who := flag.String("who", "", "")
+		if err := flag.CommandLine.Parse(os.Args[2:]); err != nil {
+			log.Fatal(err)
+		}
 		if *who == "" {
 			log.Fatal("provide -who")
 		}
@@ -121,5 +142,5 @@ func addshift(ctx context.Context, q *save.Queries, who string, start, end time.
 	})
 }
 func addperson(ctx context.Context, q *save.Queries, who string) error {
-	return fmt.Errorf("unimplemented")
+	return q.AddPerson(ctx, who)
 }

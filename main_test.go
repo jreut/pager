@@ -7,14 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jreut/pager/v2/assert"
 	"github.com/jreut/pager/v2/internal/save"
 )
 
 func TestTimeflag(t *testing.T) {
 	edt, err := time.LoadLocation("America/New_York")
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	for _, tt := range []struct {
 		arg  string
 		want time.Time
@@ -35,49 +34,64 @@ func TestTimeflag(t *testing.T) {
 		err := f.Set(tt.arg)
 		var empty time.Time
 		if tt.want != empty {
-			if err != nil {
-				t.Fatalf("want %s, got an error: %v", tt.want, err)
-			}
-			if !tt.want.Equal(*f.Time) {
-				t.Fatalf("want %s == %s", tt.want, f)
-			}
+			assert.Nil(t, err)
+			assert.Cmp(t, tt.want, *f.Time)
 		} else {
-			if err == nil {
-				t.Fatalf("want an error, got %s", f.Time)
-			}
+			assert.Error(t, "cannot parse", err)
 		}
 	}
 
-	gott := time.Date(2022, 10, 30, 0, 22, 0, 0, edt)
-	got := (timeflag{&gott}).String()
-	if want := "2022-10-30T00:22:00-04:00"; want != got {
-		t.Fatalf("want %s, got %s", want, got)
-	}
+	dt := time.Date(2022, 10, 30, 0, 22, 0, 0, edt)
+	got := (timeflag{&dt}).String()
+	assert.Cmp(t, "2022-10-30T00:22:00-04:00", got)
 }
 
 func TestAddPerson(t *testing.T) {
 	ctx := context.Background()
 	q := save.New(testdb(t, ctx))
-	err := q.AddPerson(ctx, "alice")
-	if err != nil {
-		t.Fatal(err)
+	assert.Nil(t, q.AddPerson(ctx, "alice"))
+	assert.Error(t, "UNIQUE constraint failed", q.AddPerson(ctx, "alice"))
+}
+
+func TestAddShift(t *testing.T) {
+	ctx := context.Background()
+	q := save.New(testdb(t, ctx))
+	ps := []save.Person{{Handle: "alice"}, {Handle: "bob"}}
+	for _, p := range ps {
+		assert.Nil(t, q.AddPerson(ctx, p.Handle))
 	}
+	t0 := time.Date(2022, 10, 31, 13, 25, 42, 12345, time.UTC)
+	t1 := time.Date(2022, 11, 3, 13, 25, 42, 12345, time.UTC)
+
+	assert.Nil(t, q.AddShift(ctx, save.AddShiftParams{
+		Person:    ps[0].Handle,
+		StartAt:   t0,
+		EndBefore: t1,
+	}))
+
+	// No uniqueness constraint
+	assert.Nil(t, q.AddShift(ctx, save.AddShiftParams{
+		Person:    ps[0].Handle,
+		StartAt:   t0,
+		EndBefore: t1,
+	}))
+
+	// Backwards doesn't work
+	assert.Error(t, "CHECK constraint failed", q.AddShift(ctx, save.AddShiftParams{
+		Person:    ps[0].Handle,
+		StartAt:   t1,
+		EndBefore: t0,
+	}))
 }
 
 func testdb(t *testing.T, ctx context.Context) *sql.DB {
 	t.Helper()
-	db, err := sql.Open("sqlite3", ":memory:?cache=shared")
-	if err != nil {
-		t.Fatal(err)
-	}
-	schema, err := os.ReadFile("schema.sql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = db.ExecContext(ctx, string(schema))
-	if err != nil {
-		t.Fatal(err)
-	}
+	db, err := sql.Open("sqlite3", ":memory:?cache=shared&_fk=true")
+	assert.Nil(t, err)
 	t.Cleanup(func() { db.Close() })
+	schema, err := os.ReadFile("schema.sql")
+	assert.Nil(t, err)
+	_, err = db.ExecContext(ctx, string(schema))
+	assert.Nil(t, err)
 	return db
 }

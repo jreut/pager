@@ -3,6 +3,10 @@ all: test
 test: internal/save
 	go test ./...
 
+test/record:
+	UPDATE_GOLDEN=1 go test ./...
+	go test ./...
+
 run: internal/save db.sqlite3
 	go run .
 
