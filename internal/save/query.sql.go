@@ -10,6 +10,15 @@ import (
 	"time"
 )
 
+const addPerson = `-- name: AddPerson :exec
+INSERT INTO person(handle) VALUES (?)
+`
+
+func (q *Queries) AddPerson(ctx context.Context, handle string) error {
+	_, err := q.db.ExecContext(ctx, addPerson, handle)
+	return err
+}
+
 const addShift = `-- name: AddShift :exec
 ;
 

@@ -4,22 +4,23 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"time"
 
 	"github.com/jreut/pager/v2/internal/save"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-// PRAGMA foreign_keys = ON;
-
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	if len(os.Args) <= 1 {
 		log.Fatal("usage: TODO")
 	}
 
-	db, err := sql.Open("sqlite", "file://db.sqlite3")
+	db, err := sql.Open("sqlite3", "file:db.sqlite3?_fk=true")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,18 +30,32 @@ func main() {
 	defer cancel()
 
 	switch mode := os.Args[1]; mode {
-	case "add":
+	case "add-person":
+		who := flag.String("who", "", "")
+		if *who == "" {
+			log.Fatal("provide -who")
+		}
+		if err := addperson(ctx, q, *who); err != nil {
+			log.Fatal(err)
+		}
+	case "add-shift":
 		var (
 			empty time.Time
 			start time.Time
 			end   time.Time
 		)
-		flag.Var(&timeflag{start}, "start", "start (inclusive)")
-		flag.Var(&timeflag{end}, "end", "end (exclusive)")
+		flag.Var(timeflag{&start}, "start", "start (inclusive)")
+		flag.Var(timeflag{&end}, "end", "end (exclusive)")
 		dur := flag.Duration("for", 0, "duration")
-		who := flag.String("person", "", "who")
+		who := flag.String("who", "", "who")
 		if err := flag.CommandLine.Parse(os.Args[2:]); err != nil {
 			log.Fatal(err)
+		}
+		if start == empty {
+			log.Fatal("provide -start")
+		}
+		if *who == "" {
+			log.Fatal("provide -who")
 		}
 		if end != empty && *dur != 0 {
 			log.Fatal("provide one of -end or -for")
@@ -48,7 +63,9 @@ func main() {
 		if *dur != 0 {
 			end = start.Add(*dur)
 		}
-		add(ctx, q, *who, start, end)
+		if err := addshift(ctx, q, *who, start, end); err != nil {
+			log.Fatal(err)
+		}
 
 	/*
 		case "apply":
@@ -78,28 +95,31 @@ func main() {
 	}
 }
 
-type timeflag struct{ time.Time }
+type timeflag struct{ *time.Time }
 
-func (f *timeflag) Set(v string) error {
+func (f timeflag) Set(v string) error {
 	out, err := time.Parse(time.RFC3339, v)
 	if err != nil {
 		return err
 	}
-	f.Time = out
+	*f.Time = out
 	return nil
 }
 
-func (f *timeflag) String() string {
-	if f == nil {
+func (f timeflag) String() string {
+	if f.Time == nil {
 		return "<nil>"
 	}
 	return f.Format(time.RFC3339)
 }
 
-func add(ctx context.Context, q *save.Queries, who string, start, end time.Time) error {
+func addshift(ctx context.Context, q *save.Queries, who string, start, end time.Time) error {
 	return q.AddShift(ctx, save.AddShiftParams{
 		Person:    who,
 		StartAt:   start,
 		EndBefore: end,
 	})
+}
+func addperson(ctx context.Context, q *save.Queries, who string) error {
+	return fmt.Errorf("unimplemented")
 }

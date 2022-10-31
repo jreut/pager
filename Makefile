@@ -1,12 +1,17 @@
-all: generate test run
+all: test
 
-test:
+test: internal/save
 	go test ./...
-run:
+
+run: internal/save db.sqlite3
 	go run .
 
-generate: bin/sqlc
-	bin/sqlc generate
+internal/save: bin/sqlc schema.sql sqlc.yaml
+	bin/sqlc internal/save
 
 bin/sqlc:
+	mkdir -p bin
 	GOBIN=$(abspath bin) go install github.com/kyleconroy/sqlc/cmd/sqlc@latest
+
+db.sqlite3: schema.sql
+	sqlite3 db.sqlite3 < schema.sql
