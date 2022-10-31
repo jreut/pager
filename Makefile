@@ -7,7 +7,7 @@ run: internal/save db.sqlite3
 	go run .
 
 internal/save: bin/sqlc schema.sql sqlc.yaml
-	bin/sqlc internal/save
+	bin/sqlc generate
 
 bin/sqlc:
 	mkdir -p bin
