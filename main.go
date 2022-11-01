@@ -53,7 +53,7 @@ func main() {
 		if *who == "" {
 			log.Fatal("provide -who")
 		}
-		if err := addperson(ctx, q, *who); err != nil {
+		if err := q.AddPerson(ctx, *who); err != nil {
 			log.Fatal(err)
 		}
 	case "add-shift":
@@ -81,7 +81,11 @@ func main() {
 		if *dur != 0 {
 			end = start.Add(*dur)
 		}
-		if err := addshift(ctx, q, *who, start, end); err != nil {
+		if err := q.AddShift(ctx, save.AddShiftParams{
+			Person:    *who,
+			StartAt:   start,
+			EndBefore: end,
+		}); err != nil {
 			log.Fatal(err)
 		}
 
@@ -129,15 +133,4 @@ func (f timeflag) String() string {
 		return "<nil>"
 	}
 	return f.Format(time.RFC3339)
-}
-
-func addshift(ctx context.Context, q *save.Queries, who string, start, end time.Time) error {
-	return q.AddShift(ctx, save.AddShiftParams{
-		Person:    who,
-		StartAt:   start,
-		EndBefore: end,
-	})
-}
-func addperson(ctx context.Context, q *save.Queries, who string) error {
-	return q.AddPerson(ctx, who)
 }

@@ -1,9 +1,10 @@
 all: test
 
 test: pkg/save
-	find . -type d -name testdata | xargs rm -rv
-	UPDATE_GOLDEN=1 go test ./...
 	go test ./...
+
+test/record: pkg/save
+	sh test-record go test ./...
 
 run: pkg/save db.sqlite3
 	go run .
