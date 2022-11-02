@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/jreut/pager/v2/pkg/assert"
@@ -40,11 +41,8 @@ func TestIntegration(t *testing.T) {
 		},
 	} {
 		t.Run("", func(t *testing.T) {
-			f, err := os.CreateTemp("", "db-*.sqlite3")
-			assert.Nil(t, err)
-			assert.Nil(t, f.Close())
-			t.Log(f.Name())
-			db, err := save.Open(f.Name(), nil)
+			dbname := filepath.Join(t.TempDir(), "db.sqlite3")
+			db, err := save.Open(dbname, nil)
 			assert.Nil(t, err)
 			defer db.Close()
 			_, err = db.ExecContext(ctx, save.Schema)
@@ -56,7 +54,7 @@ func TestIntegration(t *testing.T) {
 					cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 					cmd.Env = append(os.Environ(),
 						"DETERMINISTIC=1",
-						"DB="+f.Name(),
+						"DB="+dbname,
 					)
 					var stderr bytes.Buffer
 					cmd.Stdout = assert.Golden(t, "out.txt")
