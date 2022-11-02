@@ -1,68 +1,95 @@
 package shift
 
 import (
-	"fmt"
-	"sort"
-
 	"github.com/jreut/pager/v2/pkg/save"
 )
 
+// Flatten turns a list of "overrides" into a flat timeline.
+//
+// It treats the order of the list as the order in which shifts were added to the system.
+// Shifts added later overwrite previous shifts.
+// Flatten returns a chronologically sorted list.
 func Flatten(in []save.Shift) []save.Shift {
 	if len(in) < 2 {
 		return in
 	}
-	out := []save.Shift{in[0]}
-	for _, i := range in[1:] {
-		i_start, i_end := i.StartAt, i.EndBefore
-		for j := range out {
-			j_start, j_end := out[j].StartAt, out[j].EndBefore
-			// j: alice: [-------)
-			// i:   bob:   [---)
-			// -------------------
-			//    alice: [-)   [-)
-			//      bob:   [---)
-			if j_start.Before(i_start) && j_end.After(i_end) {
-				left := save.Shift{Person: out[j].Person, StartAt: out[j].StartAt, EndBefore: i.StartAt}
-				right := save.Shift{Person: out[j].Person, StartAt: i.EndBefore, EndBefore: out[j].EndBefore}
-				out = append(append(out[:j], left, i, right), out[j+1:]...)
-				break
-			}
-			// j:   bob:   [---)
-			// i: alice: [-------)
-			// -------------------
-			//    alice: [-------)
-			if !j_start.Before(i_start) && !j_end.After(i_end) {
-				out = append(append(out[:j], i), out[j+1:]...)
-				break
-			}
+
+	var out []save.Shift
+	for _, s := range in {
+		if !s.StartAt.Before(s.EndBefore) {
+			panic("invalid shift")
 		}
+		// Find the slice bounds of the relevant, existing shifts.
+		l, r := bounds(out, s)
+		// Make a slice to splice in.
+		tosplice := combine(out[l:r], s)
+		// Splice in the new slice.
+		out = append(out[:l], append(tosplice, out[r:]...)...)
+	}
+
+	// Merge consecutive shifts for the same person.
+	out = merge(out)
+
+	return out
+}
+
+// bounds finds the smallest slice of xs that are relevant to y.
+//
+// A given x in xs is relevant if it overlaps with y.
+// If no xs are relevant to y, the returned slice bounds will be equal, and they will represent the place to insert y chronologically.
+//
+// We assume xs is chronologically sorted.
+func bounds(xs []save.Shift, y save.Shift) (int, int) {
+	if len(xs) == 0 {
+		return 0, 0
+	}
+	var l, r int
+	for l = 0; l < len(xs); l++ {
+		if xs[l].EndBefore.After(y.StartAt) {
+			break
+		}
+	}
+	for r = len(xs); r >= 0; r-- {
+		if xs[r-1].StartAt.Before(y.EndBefore) {
+			break
+		}
+	}
+	return l, r
+}
+
+// combine adds y to xs as an override.
+//
+// Each x in xs is shortened or deleted as necessary to let y fit.
+func combine(xs []save.Shift, y save.Shift) []save.Shift {
+	if len(xs) == 0 {
+		return []save.Shift{y}
+	}
+	var out []save.Shift
+	l, r := xs[0], xs[len(xs)-1]
+	if l.StartAt.Before(y.StartAt) {
+		l.EndBefore = y.StartAt
+		out = append(out, l)
+	}
+	out = append(out, y)
+	if r.EndBefore.After(y.EndBefore) {
+		r.StartAt = y.EndBefore
+		out = append(out, r)
 	}
 	return out
 }
 
-func sortshifts(in []save.Shift) {
-	sort.Slice(in, func(i, j int) bool {
-		if overlap(in[i], in[j]) {
-			return i < j
+// merge combines consecutive shifts for the same person.
+func merge(xs []save.Shift) []save.Shift {
+	var out []save.Shift
+	for _, x := range xs {
+		if len(out) > 0 {
+			last := out[len(out)-1]
+			if last.EndBefore.Equal(x.StartAt) && last.Person == x.Person {
+				out[len(out)-1].EndBefore = x.EndBefore
+				continue
+			}
 		}
-		return in[i].StartAt.Before(in[j].StartAt)
-	})
-}
-
-func overlap(a, b save.Shift) bool {
-	a_start, a_end := a.StartAt, a.EndBefore
-	b_start, b_end := b.StartAt, b.EndBefore
-	if a_start.After(a_end) {
-		panic(fmt.Sprintf("invalid shift: start > end: %+v", a))
+		out = append(out, x)
 	}
-	if b_start.After(b_end) {
-		panic(fmt.Sprintf("invalid shift: start > end: %+v", b))
-	}
-	if !a_end.After(b_start) {
-		return false
-	}
-	if !b_end.After(a_start) {
-		return false
-	}
-	return true
+	return out
 }
