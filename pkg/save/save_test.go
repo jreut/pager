@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"net/url"
-	"os"
 	"testing"
 	"time"
 
@@ -55,9 +54,7 @@ func testdb(t *testing.T, ctx context.Context) *sql.DB {
 	db, err := save.Open(":memory:", url.Values{"cache": []string{"shared"}})
 	assert.Nil(t, err)
 	t.Cleanup(func() { db.Close() })
-	schema, err := os.ReadFile("../../schema.sql")
-	assert.Nil(t, err)
-	_, err = db.ExecContext(ctx, string(schema))
+	_, err = db.ExecContext(ctx, save.Schema)
 	assert.Nil(t, err)
 	return db
 }

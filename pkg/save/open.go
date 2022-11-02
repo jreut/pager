@@ -4,8 +4,13 @@ import (
 	"database/sql"
 	"net/url"
 
+	_ "embed"
+
 	_ "github.com/mattn/go-sqlite3"
 )
+
+//go:embed schema.sql
+var Schema string
 
 func Open(path string, opts url.Values) (*sql.DB, error) {
 	if opts == nil {

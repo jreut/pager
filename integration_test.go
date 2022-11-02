@@ -47,9 +47,7 @@ func TestIntegration(t *testing.T) {
 			db, err := save.Open(f.Name(), nil)
 			assert.Nil(t, err)
 			defer db.Close()
-			schema, err := os.ReadFile("schema.sql")
-			assert.Nil(t, err)
-			_, err = db.ExecContext(ctx, string(schema))
+			_, err = db.ExecContext(ctx, save.Schema)
 			assert.Nil(t, err)
 
 			for _, ttt := range tt {
