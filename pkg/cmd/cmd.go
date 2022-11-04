@@ -3,11 +3,14 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jreut/pager/v2/pkg/interval"
 	"github.com/jreut/pager/v2/pkg/save"
 )
+
+var ErrConflict = errors.New("conflict")
 
 func AddInterval(ctx context.Context, q *save.Queries, arg save.AddIntervalParams) error {
 	var conflict string
@@ -26,7 +29,7 @@ func AddInterval(ctx context.Context, q *save.Queries, arg save.AddIntervalParam
 	}
 
 	if x, ok := interval.Conflict(existing, save.Interval(arg)); ok {
-		return fmt.Errorf("cannot schedule %s over existing %s", save.Interval(arg), x)
+		return fmt.Errorf("%w: cannot schedule %s over existing %s", ErrConflict, save.Interval(arg), x)
 	}
 
 	return q.AddInterval(ctx, arg)

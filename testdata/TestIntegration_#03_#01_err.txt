@@ -1,1 +1,1 @@
-main.go:64: ok
+main.go:71: ok

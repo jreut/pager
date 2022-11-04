@@ -1,2 +1,1 @@
-main.go:44: no command given: choose one of [add-interval add-person]
-exit status 1
+main.go:45: no command given: choose one of [add-interval add-person]

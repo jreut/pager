@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -52,14 +53,20 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 
-	cmd, ok := cmds[os.Args[1]]
+	command, ok := cmds[os.Args[1]]
 	if !ok {
 		log.Fatalf("unhandled command %q: choose one of %s", os.Args[1], names)
 	}
-	if err := cmd(ctx, os.Args[2:], opts{
+	if err := command(ctx, os.Args[2:], opts{
 		save.New(db),
 	}); err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		switch {
+		case errors.Is(err, cmd.ErrConflict):
+			os.Exit(17)
+		default:
+			os.Exit(1)
+		}
 	}
 	log.Println("ok")
 }

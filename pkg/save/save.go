@@ -28,5 +28,5 @@ func Open(path string, opts url.Values) (*sql.DB, error) {
 }
 
 func (i Interval) String() string {
-	return fmt.Sprintf("%s for %q [%s,%s)", i.Kind, i.Person, i.StartAt, i.EndBefore)
+	return fmt.Sprintf("%s for %q [%s, %s)", i.Kind, i.Person, i.StartAt, i.EndBefore)
 }

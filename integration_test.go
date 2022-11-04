@@ -15,8 +15,15 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-	prefix := []string{"go", "run", "."}
 	ctx := context.Background()
+	prog := filepath.Join(t.TempDir(), "prog")
+	out, err := exec.
+		CommandContext(ctx, "go", "build", "-o", prog, ".").
+		CombinedOutput()
+	if err != nil {
+		t.Fatal(string(out), err)
+	}
+
 	for _, tt := range [][]struct {
 		args   []string
 		status int
@@ -43,6 +50,20 @@ func TestIntegration(t *testing.T) {
 				status: 0,
 			},
 		},
+		{
+			{
+				args:   []string{"add-person", "-who", "alice"},
+				status: 0,
+			},
+			{
+				args:   []string{"add-interval", "-who", "alice", "-start", "2022-10-31T15:40:00.0-04:00", "-for", "24h"},
+				status: 0,
+			},
+			{
+				args:   []string{"add-interval", "-who", "alice", "-start", "2022-11-01T09:00:00.0-04:00", "-for", "1h", "-kind", "EXCLUSION"},
+				status: 17,
+			},
+		},
 	} {
 		t.Run("", func(t *testing.T) {
 			dbname := filepath.Join(t.TempDir(), "db.sqlite3")
@@ -54,8 +75,7 @@ func TestIntegration(t *testing.T) {
 
 			for _, ttt := range tt {
 				t.Run("", func(t *testing.T) {
-					args := append(prefix, ttt.args...)
-					cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+					cmd := exec.CommandContext(ctx, prog, ttt.args...)
 					cmd.Env = append(os.Environ(),
 						"DETERMINISTIC=1",
 						"DB="+dbname,
