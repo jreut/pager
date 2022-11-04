@@ -33,10 +33,50 @@ func (q *Queries) AddInterval(ctx context.Context, arg AddIntervalParams) error 
 }
 
 const addPerson = `-- name: AddPerson :exec
+;
+
 INSERT INTO person(handle) VALUES (?)
 `
 
+// TODO: sqlc doesn't seem to support nested WHERE clauses for sqlite.
+// AND (
+// 	start_at >= ?
+// 	OR end_before <= ?
+// )
 func (q *Queries) AddPerson(ctx context.Context, handle string) error {
 	_, err := q.db.ExecContext(ctx, addPerson, handle)
 	return err
+}
+
+const listIntervals = `-- name: ListIntervals :many
+SELECT person, start_at, end_before, kind FROM interval
+WHERE kind = ?
+`
+
+func (q *Queries) ListIntervals(ctx context.Context, kind string) ([]Interval, error) {
+	rows, err := q.db.QueryContext(ctx, listIntervals, kind)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Interval
+	for rows.Next() {
+		var i Interval
+		if err := rows.Scan(
+			&i.Person,
+			&i.StartAt,
+			&i.EndBefore,
+			&i.Kind,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

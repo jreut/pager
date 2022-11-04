@@ -39,7 +39,7 @@ func TestIntegration(t *testing.T) {
 				status: 0,
 			},
 			{
-				args:   []string{"add-shift", "-who", "alice", "-start", "2022-10-31T15:40:00.0-04:00", "-for", "24h"},
+				args:   []string{"add-interval", "-who", "alice", "-start", "2022-10-31T15:40:00.0-04:00", "-for", "24h"},
 				status: 0,
 			},
 		},

@@ -1,2 +1,2 @@
-main.go:56: unhandled command "unknown": choose one of [add-person add-shift]
+main.go:57: unhandled command "unknown": choose one of [add-interval add-person]
 exit status 1

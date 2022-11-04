@@ -94,17 +94,18 @@ func merge(xs []save.Interval) []save.Interval {
 	return out
 }
 
-// IsConflict tells whether y overlaps a [save.Interval] in xs.
-// y overlaps with a shift x in xs x and y have the same [save.Interval.Person] and if their intervals overlap.
-func IsConflict(xs []save.Interval, y save.Interval) bool {
+// Conflict tells which interval in xs conflicts with y.
+//
+// y overlaps with an x in xs if x and y have the same Person and if their times overlap.
+func Conflict(xs []save.Interval, y save.Interval) (save.Interval, bool) {
 	validate(y)
 	xs = Flatten(xs)
 	for _, x := range xs {
 		if x.Person == y.Person && overlap(x, y) {
-			return true
+			return x, true
 		}
 	}
-	return false
+	return save.Interval{}, false
 }
 
 func overlap(a, b save.Interval) bool {

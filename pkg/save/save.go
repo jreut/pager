@@ -2,6 +2,7 @@ package save
 
 import (
 	"database/sql"
+	"fmt"
 	"net/url"
 
 	_ "embed"
@@ -23,4 +24,8 @@ func Open(path string, opts url.Values) (*sql.DB, error) {
 	}
 	opts.Set("_fk", "true")
 	return sql.Open("sqlite3", path+"?"+opts.Encode())
+}
+
+func (i Interval) String() string {
+	return fmt.Sprintf("%s for %q [%s,%s)", i.Kind, i.Person, i.StartAt, i.EndBefore)
 }

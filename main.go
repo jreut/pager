@@ -10,6 +10,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/jreut/pager/v2/pkg/cmd"
 	"github.com/jreut/pager/v2/pkg/save"
 )
 
@@ -76,7 +77,7 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 		}
 		return opts.q.AddPerson(ctx, *who)
 	},
-	"add-shift": func(ctx context.Context, args []string, opts opts) error {
+	"add-interval": func(ctx context.Context, args []string, opts opts) error {
 		var (
 			zero  time.Time
 			start time.Time
@@ -86,6 +87,7 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 		flag.Var(timeflag{&end}, "end", "end (exclusive)")
 		dur := flag.Duration("for", 0, "duration")
 		who := flag.String("who", "", "who")
+		kind := flag.String("kind", save.IntervalKindShift, fmt.Sprintf("one of %s", []string{save.IntervalKindShift, save.IntervalKindExclusion}))
 		if err := flag.CommandLine.Parse(args); err != nil {
 			return err
 		}
@@ -95,17 +97,20 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 		if *who == "" {
 			return fmt.Errorf("provide -who")
 		}
+		if !(*kind == save.IntervalKindExclusion || *kind == save.IntervalKindShift) {
+			return fmt.Errorf("provide -kind=%s or -kind=%s", save.IntervalKindShift, save.IntervalKindExclusion)
+		}
 		if end == zero && *dur == 0 {
 			return fmt.Errorf("provide one of -end or -for")
 		}
 		if *dur != 0 {
 			end = start.Add(*dur)
 		}
-		return opts.q.AddInterval(ctx, save.AddIntervalParams{
+		return cmd.AddInterval(ctx, opts.q, save.AddIntervalParams{
 			Person:    *who,
 			StartAt:   start,
 			EndBefore: end,
-			Kind:      save.IntervalKindShift,
+			Kind:      *kind,
 		})
 	},
 }
