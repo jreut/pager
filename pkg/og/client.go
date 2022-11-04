@@ -13,8 +13,8 @@ import (
 )
 
 type Client interface {
-	Apply(context.Context, []save.Shift) error
-	List(_ context.Context, startAt, endBefore time.Time) ([]save.Shift, error)
+	Apply(context.Context, []save.Interval) error
+	List(_ context.Context, startAt, endBefore time.Time) ([]save.Interval, error)
 }
 
 const (
@@ -77,7 +77,7 @@ func (c httpclient) get(ctx context.Context, path string, query url.Values) (*ht
 // Apply implements [Client]
 //
 // See: https://docs.opsgenie.com/docs/schedule-override-api#create-schedule-override
-func (c httpclient) Apply(ctx context.Context, shifts []save.Shift) error {
+func (c httpclient) Apply(ctx context.Context, shifts []save.Interval) error {
 	for _, s := range shifts {
 		data := map[string]interface{}{
 			"user": map[string]string{
@@ -99,7 +99,7 @@ func (c httpclient) Apply(ctx context.Context, shifts []save.Shift) error {
 }
 
 // List implements [Client]
-func (httpclient) List(_ context.Context, startAt time.Time, endBefore time.Time) ([]save.Shift, error) {
+func (httpclient) List(_ context.Context, startAt time.Time, endBefore time.Time) ([]save.Interval, error) {
 	panic("unimplemented")
 }
 

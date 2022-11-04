@@ -8,12 +8,13 @@ import (
 	"time"
 )
 
-type Person struct {
-	Handle string
-}
-
-type Shift struct {
+type Interval struct {
 	Person    string
 	StartAt   time.Time
 	EndBefore time.Time
+	Kind      string
+}
+
+type Person struct {
+	Handle string
 }

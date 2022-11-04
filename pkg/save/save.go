@@ -9,6 +9,11 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const (
+	IntervalKindShift     = "SHIFT"
+	IntervalKindExclusion = "EXCLUSION"
+)
+
 //go:embed schema.sql
 var Schema string
 

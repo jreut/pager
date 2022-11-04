@@ -10,27 +10,33 @@ import (
 	"time"
 )
 
+const addInterval = `-- name: AddInterval :exec
+INSERT INTO interval(person, start_at, end_before, kind)
+VALUES (?,?,?,?)
+`
+
+type AddIntervalParams struct {
+	Person    string
+	StartAt   time.Time
+	EndBefore time.Time
+	Kind      string
+}
+
+func (q *Queries) AddInterval(ctx context.Context, arg AddIntervalParams) error {
+	_, err := q.db.ExecContext(ctx, addInterval,
+		arg.Person,
+		arg.StartAt,
+		arg.EndBefore,
+		arg.Kind,
+	)
+	return err
+}
+
 const addPerson = `-- name: AddPerson :exec
 INSERT INTO person(handle) VALUES (?)
 `
 
 func (q *Queries) AddPerson(ctx context.Context, handle string) error {
 	_, err := q.db.ExecContext(ctx, addPerson, handle)
-	return err
-}
-
-const addShift = `-- name: AddShift :exec
-INSERT INTO shift(person, start_at, end_before)
-VALUES (?,?,?)
-`
-
-type AddShiftParams struct {
-	Person    string
-	StartAt   time.Time
-	EndBefore time.Time
-}
-
-func (q *Queries) AddShift(ctx context.Context, arg AddShiftParams) error {
-	_, err := q.db.ExecContext(ctx, addShift, arg.Person, arg.StartAt, arg.EndBefore)
 	return err
 }

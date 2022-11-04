@@ -101,10 +101,11 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 		if *dur != 0 {
 			end = start.Add(*dur)
 		}
-		return opts.q.AddShift(ctx, save.AddShiftParams{
+		return opts.q.AddInterval(ctx, save.AddIntervalParams{
 			Person:    *who,
 			StartAt:   start,
 			EndBefore: end,
+			Kind:      save.IntervalKindShift,
 		})
 	},
 }

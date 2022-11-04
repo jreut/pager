@@ -1,6 +1,8 @@
 package shift
 
 import (
+	"fmt"
+
 	"github.com/jreut/pager/v2/pkg/save"
 )
 
@@ -9,16 +11,14 @@ import (
 // It treats the order of the list as the order in which shifts were added to the system.
 // Shifts added later overwrite previous shifts.
 // Flatten returns a chronologically sorted list.
-func Flatten(in []save.Shift) []save.Shift {
+func Flatten(in []save.Interval) []save.Interval {
 	if len(in) < 2 {
 		return in
 	}
 
-	var out []save.Shift
+	var out []save.Interval
 	for _, s := range in {
-		if !s.StartAt.Before(s.EndBefore) {
-			panic("invalid shift")
-		}
+		validate(s)
 		// Find the slice bounds of the relevant, existing shifts.
 		l, r := bounds(out, s)
 		// Make a slice to splice in.
@@ -39,7 +39,7 @@ func Flatten(in []save.Shift) []save.Shift {
 // If no xs are relevant to y, the returned slice bounds will be equal, and they will represent the place to insert y chronologically.
 //
 // We assume xs is chronologically sorted.
-func bounds(xs []save.Shift, y save.Shift) (int, int) {
+func bounds(xs []save.Interval, y save.Interval) (int, int) {
 	if len(xs) == 0 {
 		return 0, 0
 	}
@@ -60,11 +60,11 @@ func bounds(xs []save.Shift, y save.Shift) (int, int) {
 // combine adds y to xs as an override.
 //
 // Each x in xs is shortened or deleted as necessary to let y fit.
-func combine(xs []save.Shift, y save.Shift) []save.Shift {
+func combine(xs []save.Interval, y save.Interval) []save.Interval {
 	if len(xs) == 0 {
-		return []save.Shift{y}
+		return []save.Interval{y}
 	}
-	var out []save.Shift
+	var out []save.Interval
 	l, r := xs[0], xs[len(xs)-1]
 	if l.StartAt.Before(y.StartAt) {
 		l.EndBefore = y.StartAt
@@ -79,8 +79,8 @@ func combine(xs []save.Shift, y save.Shift) []save.Shift {
 }
 
 // merge combines consecutive shifts for the same person.
-func merge(xs []save.Shift) []save.Shift {
-	var out []save.Shift
+func merge(xs []save.Interval) []save.Interval {
+	var out []save.Interval
 	for _, x := range xs {
 		if len(out) > 0 {
 			last := out[len(out)-1]
@@ -92,4 +92,10 @@ func merge(xs []save.Shift) []save.Shift {
 		out = append(out, x)
 	}
 	return out
+}
+
+func validate(s save.Interval) {
+	if !s.StartAt.Before(s.EndBefore) {
+		panic(fmt.Sprintf("invalid shift %+v: %s >= %s", s, s.StartAt, s.EndBefore))
+	}
 }

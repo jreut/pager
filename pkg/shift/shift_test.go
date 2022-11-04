@@ -32,11 +32,11 @@ func ExampleFlatten() {
 	t4 := t0.AddDate(0, 0, 4)
 	t7 := t0.AddDate(0, 0, 7)
 
-	shifts := []save.Shift{
+	shifts := []save.Interval{
 		{Person: "alice", StartAt: t0, EndBefore: t3},
 		{Person: "bob", StartAt: t3, EndBefore: t7},
 	}
-	override := save.Shift{Person: "cindy", StartAt: t2, EndBefore: t4}
+	override := save.Interval{Person: "cindy", StartAt: t2, EndBefore: t4}
 	out := Flatten(append(shifts, override))
 	for _, o := range out {
 		fmt.Printf(
@@ -54,97 +54,97 @@ func ExampleFlatten() {
 
 func TestFlatten(t *testing.T) {
 	for _, tt := range []struct {
-		in, want []save.Shift
+		in, want []save.Interval
 	}{
 		{},
 		{
-			in: []save.Shift{
+			in: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 			},
-			want: []save.Shift{
+			want: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 			},
 		},
 		{
-			in: []save.Shift{
+			in: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t3},
 				{Person: bob, StartAt: t1, EndBefore: t2},
 			},
-			want: []save.Shift{
+			want: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 				{Person: bob, StartAt: t1, EndBefore: t2},
 				{Person: alice, StartAt: t2, EndBefore: t3},
 			},
 		},
 		{
-			in: []save.Shift{
+			in: []save.Interval{
 				{Person: bob, StartAt: t1, EndBefore: t2},
 				{Person: cindy, StartAt: t0, EndBefore: t3},
 				{Person: alice, StartAt: t0, EndBefore: t3},
 			},
-			want: []save.Shift{
+			want: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t3},
 			},
 		},
 		{
-			in: []save.Shift{
+			in: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t2},
 				{Person: bob, StartAt: t1, EndBefore: t3},
 			},
-			want: []save.Shift{
+			want: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 				{Person: bob, StartAt: t1, EndBefore: t3},
 			},
 		},
 		{
-			in: []save.Shift{
+			in: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 				{Person: alice, StartAt: t1, EndBefore: t2},
 			},
-			want: []save.Shift{
+			want: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t2},
 			},
 		},
 		{
-			in: []save.Shift{
+			in: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t2},
 				{Person: bob, StartAt: t1, EndBefore: t3},
 			},
-			want: []save.Shift{
+			want: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 				{Person: bob, StartAt: t1, EndBefore: t3},
 			},
 		},
 		{
-			in: []save.Shift{
+			in: []save.Interval{
 				{Person: bob, StartAt: t1, EndBefore: t3},
 				{Person: alice, StartAt: t0, EndBefore: t2},
 			},
-			want: []save.Shift{
+			want: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t2},
 				{Person: bob, StartAt: t2, EndBefore: t3},
 			},
 		},
 		{
-			in: []save.Shift{
+			in: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t2},
 				{Person: bob, StartAt: t2, EndBefore: t3},
 				{Person: cindy, StartAt: t3, EndBefore: t5},
 				{Person: dana, StartAt: t1, EndBefore: t4},
 			},
-			want: []save.Shift{
+			want: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 				{Person: dana, StartAt: t1, EndBefore: t4},
 				{Person: cindy, StartAt: t4, EndBefore: t5},
 			},
 		},
 		{
-			in: []save.Shift{
+			in: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 				{Person: bob, StartAt: t4, EndBefore: t5},
 				{Person: cindy, StartAt: t2, EndBefore: t3},
 			},
-			want: []save.Shift{
+			want: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 				{Person: cindy, StartAt: t2, EndBefore: t3},
 				{Person: bob, StartAt: t4, EndBefore: t5},
@@ -160,44 +160,44 @@ func TestFlatten(t *testing.T) {
 
 func TestBounds(t *testing.T) {
 	for _, tt := range []struct {
-		xs           []save.Shift
-		y            save.Shift
+		xs           []save.Interval
+		y            save.Interval
 		wantl, wantr int
 	}{
 		{
 			xs:    nil,
-			y:     save.Shift{StartAt: t0, EndBefore: t1},
+			y:     save.Interval{StartAt: t0, EndBefore: t1},
 			wantl: 0, wantr: 0,
 		},
 		{
-			xs: []save.Shift{
+			xs: []save.Interval{
 				{StartAt: t0, EndBefore: t1},
 			},
-			y:     save.Shift{StartAt: t0, EndBefore: t1},
+			y:     save.Interval{StartAt: t0, EndBefore: t1},
 			wantl: 0, wantr: 1,
 		},
 		{
-			xs: []save.Shift{
+			xs: []save.Interval{
 				{StartAt: t0, EndBefore: t2},
 			},
-			y:     save.Shift{StartAt: t1, EndBefore: t2},
+			y:     save.Interval{StartAt: t1, EndBefore: t2},
 			wantl: 0, wantr: 1,
 		},
 		{
-			xs: []save.Shift{
+			xs: []save.Interval{
 				{StartAt: t0, EndBefore: t2},
 			},
-			y:     save.Shift{StartAt: t0, EndBefore: t1},
+			y:     save.Interval{StartAt: t0, EndBefore: t1},
 			wantl: 0, wantr: 1,
 		},
 		{
-			xs: []save.Shift{
+			xs: []save.Interval{
 				{StartAt: t0, EndBefore: t1},
 				{StartAt: t1, EndBefore: t2},
 				{StartAt: t2, EndBefore: t3},
 				{StartAt: t3, EndBefore: t4},
 			},
-			y:     save.Shift{StartAt: t1, EndBefore: t3},
+			y:     save.Interval{StartAt: t1, EndBefore: t3},
 			wantl: 1, wantr: 3,
 		},
 	} {
@@ -213,24 +213,24 @@ func TestBounds(t *testing.T) {
 
 func TestCombine(t *testing.T) {
 	for _, tt := range []struct {
-		xs   []save.Shift
-		y    save.Shift
-		want []save.Shift
+		xs   []save.Interval
+		y    save.Interval
+		want []save.Interval
 	}{
 		{
 			xs:   nil,
-			y:    save.Shift{StartAt: t0, EndBefore: t1},
-			want: []save.Shift{{StartAt: t0, EndBefore: t1}},
+			y:    save.Interval{StartAt: t0, EndBefore: t1},
+			want: []save.Interval{{StartAt: t0, EndBefore: t1}},
 		},
 		//  xs: [alice)
 		//   y: [bob  )
 		// out: [bob  )
 		{
-			xs: []save.Shift{
+			xs: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 			},
-			y: save.Shift{Person: bob, StartAt: t0, EndBefore: t1},
-			want: []save.Shift{
+			y: save.Interval{Person: bob, StartAt: t0, EndBefore: t1},
+			want: []save.Interval{
 				{Person: bob, StartAt: t0, EndBefore: t1},
 			},
 		},
@@ -238,12 +238,12 @@ func TestCombine(t *testing.T) {
 		//   y:    [cindy )
 		// out: [a)[c    )[b )
 		{
-			xs: []save.Shift{
+			xs: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t2},
 				{Person: bob, StartAt: t2, EndBefore: t4},
 			},
-			y: save.Shift{Person: cindy, StartAt: t1, EndBefore: t3},
-			want: []save.Shift{
+			y: save.Interval{Person: cindy, StartAt: t1, EndBefore: t3},
+			want: []save.Interval{
 				{Person: alice, StartAt: t0, EndBefore: t1},
 				{Person: cindy, StartAt: t1, EndBefore: t3},
 				{Person: bob, StartAt: t3, EndBefore: t4},

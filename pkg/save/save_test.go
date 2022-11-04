@@ -18,34 +18,64 @@ func TestAddPerson(t *testing.T) {
 	assert.Error(t, "UNIQUE constraint failed", q.AddPerson(ctx, "alice"))
 }
 
-func TestAddShift(t *testing.T) {
+func TestAddInterval(t *testing.T) {
 	ctx := context.Background()
 	q := save.New(testdb(t, ctx))
-	ps := []save.Person{{Handle: "alice"}, {Handle: "bob"}}
-	for _, p := range ps {
-		assert.Nil(t, q.AddPerson(ctx, p.Handle))
-	}
+
+	const alice = "alice"
+	assert.Nil(t, q.AddPerson(ctx, alice))
+
 	t0 := time.Date(2022, 10, 31, 13, 25, 42, 12345, time.UTC)
 	t1 := time.Date(2022, 11, 3, 13, 25, 42, 12345, time.UTC)
 
-	assert.Nil(t, q.AddShift(ctx, save.AddShiftParams{
-		Person:    ps[0].Handle,
+	assert.Error(t, "CHECK constraint failed.*kind", q.AddInterval(ctx, save.AddIntervalParams{
+		Person:    alice,
 		StartAt:   t0,
 		EndBefore: t1,
+	}))
+
+	assert.Error(t, "CHECK constraint failed.*kind", q.AddInterval(ctx, save.AddIntervalParams{
+		Person:    alice,
+		StartAt:   t0,
+		EndBefore: t1,
+		Kind:      "unknown",
+	}))
+
+	assert.Error(t, "^FOREIGN KEY constraint failed$", q.AddInterval(ctx, save.AddIntervalParams{
+		Person:    "unknown",
+		StartAt:   t0,
+		EndBefore: t1,
+		Kind:      save.IntervalKindShift,
+	}))
+
+	assert.Nil(t, q.AddInterval(ctx, save.AddIntervalParams{
+		Person:    alice,
+		StartAt:   t0,
+		EndBefore: t1,
+		Kind:      save.IntervalKindShift,
+	}))
+
+	assert.Nil(t, q.AddInterval(ctx, save.AddIntervalParams{
+		Person:    alice,
+		StartAt:   t0,
+		EndBefore: t1,
+		Kind:      save.IntervalKindExclusion,
 	}))
 
 	// No uniqueness constraint
-	assert.Nil(t, q.AddShift(ctx, save.AddShiftParams{
-		Person:    ps[0].Handle,
+	assert.Nil(t, q.AddInterval(ctx, save.AddIntervalParams{
+		Person:    alice,
 		StartAt:   t0,
 		EndBefore: t1,
+		Kind:      save.IntervalKindExclusion,
 	}))
 
 	// Backwards doesn't work
-	assert.Error(t, "CHECK constraint failed", q.AddShift(ctx, save.AddShiftParams{
-		Person:    ps[0].Handle,
+	assert.Error(t, "CHECK constraint failed", q.AddInterval(ctx, save.AddIntervalParams{
+		Person:    alice,
 		StartAt:   t1,
 		EndBefore: t0,
+		Kind:      save.IntervalKindExclusion,
 	}))
 }
 
