@@ -256,3 +256,122 @@ func TestCombine(t *testing.T) {
 		})
 	}
 }
+
+func ExampleIsConflict() {
+	t0 := time.Date(2022, 11, 4, 1, 49, 0, 0, time.UTC)
+	t1 := t0.AddDate(0, 0, 1)
+	t2 := t0.AddDate(0, 0, 2)
+	t3 := t0.AddDate(0, 0, 3)
+	t4 := t0.AddDate(0, 0, 4)
+
+	shifts := []save.Interval{
+		{Person: "alice", StartAt: t0, EndBefore: t2},
+		{Person: "bob", StartAt: t2, EndBefore: t3},
+		{Person: "cindy", StartAt: t3, EndBefore: t4},
+	}
+
+	fmt.Println(IsConflict(shifts, save.Interval{
+		Person: "alice", StartAt: t2, EndBefore: t4,
+	}))
+	fmt.Println(IsConflict(shifts, save.Interval{
+		Person: "alice", StartAt: t1, EndBefore: t4,
+	}))
+	// Output:
+	// false
+	// true
+}
+
+func TestIsConflict(t *testing.T) {
+	for _, tt := range []struct {
+		xs   []save.Interval
+		y    save.Interval
+		want bool
+	}{
+		{
+			xs:   []save.Interval{},
+			y:    save.Interval{Person: alice, StartAt: t0, EndBefore: t1},
+			want: false,
+		},
+		{
+			xs: []save.Interval{
+				{Person: alice, StartAt: t0, EndBefore: t1},
+			},
+			y:    save.Interval{Person: alice, StartAt: t0, EndBefore: t1},
+			want: true,
+		},
+		{
+			xs: []save.Interval{
+				{Person: alice, StartAt: t0, EndBefore: t1},
+			},
+			y:    save.Interval{Person: bob, StartAt: t0, EndBefore: t1},
+			want: false,
+		},
+		{
+			xs: []save.Interval{
+				{Person: alice, StartAt: t0, EndBefore: t1},
+				{Person: bob, StartAt: t1, EndBefore: t2},
+			},
+			y:    save.Interval{Person: bob, StartAt: t0, EndBefore: t1},
+			want: false,
+		},
+		{
+			xs: []save.Interval{
+				{Person: alice, StartAt: t0, EndBefore: t2},
+				{Person: bob, StartAt: t1, EndBefore: t3},
+			},
+			y:    save.Interval{Person: alice, StartAt: t1, EndBefore: t3},
+			want: false,
+		},
+		{
+			xs: []save.Interval{
+				{Person: bob, StartAt: t1, EndBefore: t3},
+				{Person: alice, StartAt: t0, EndBefore: t2},
+			},
+			y:    save.Interval{Person: alice, StartAt: t1, EndBefore: t3},
+			want: true,
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			got := IsConflict(tt.xs, tt.y)
+			assert.Cmp(t, tt.want, got)
+		})
+	}
+}
+
+func TestOverlap(t *testing.T) {
+	for _, tt := range []struct {
+		a, b save.Interval
+		want bool
+	}{
+		{
+			a:    save.Interval{StartAt: t0, EndBefore: t1},
+			b:    save.Interval{StartAt: t0, EndBefore: t1},
+			want: true,
+		},
+		{
+			a:    save.Interval{StartAt: t0, EndBefore: t2},
+			b:    save.Interval{StartAt: t1, EndBefore: t3},
+			want: true,
+		},
+		{
+			a:    save.Interval{StartAt: t0, EndBefore: t1},
+			b:    save.Interval{StartAt: t1, EndBefore: t2},
+			want: false,
+		},
+		{
+			a:    save.Interval{StartAt: t0, EndBefore: t3},
+			b:    save.Interval{StartAt: t1, EndBefore: t2},
+			want: true,
+		},
+		{
+			a:    save.Interval{StartAt: t0, EndBefore: t1},
+			b:    save.Interval{StartAt: t2, EndBefore: t3},
+			want: false,
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			assert.Cmp(t, tt.want, overlap(tt.a, tt.b))
+			assert.Cmp(t, tt.want, overlap(tt.b, tt.a))
+		})
+	}
+}
