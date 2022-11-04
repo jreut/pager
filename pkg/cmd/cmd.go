@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jreut/pager/v2/pkg/interval"
 	"github.com/jreut/pager/v2/pkg/save"
-	"github.com/jreut/pager/v2/pkg/shift"
 )
 
 func AddInterval(ctx context.Context, q *save.Queries, arg save.AddIntervalParams) error {
@@ -25,7 +25,7 @@ func AddInterval(ctx context.Context, q *save.Queries, arg save.AddIntervalParam
 		return err
 	}
 
-	if x, ok := shift.Conflict(existing, save.Interval(arg)); ok {
+	if x, ok := interval.Conflict(existing, save.Interval(arg)); ok {
 		return fmt.Errorf("cannot schedule %s over existing %s", save.Interval(arg), x)
 	}
 

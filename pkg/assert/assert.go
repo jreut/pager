@@ -1,3 +1,4 @@
+// Package assert provides test assertions.
 package assert
 
 import (

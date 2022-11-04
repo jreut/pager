@@ -1,3 +1,4 @@
+// Package og is an OpsGenie client.
 package og
 
 import (

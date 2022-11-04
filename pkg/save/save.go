@@ -1,3 +1,4 @@
+// Package save is the persistence layer.
 package save
 
 import (

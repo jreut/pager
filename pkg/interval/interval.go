@@ -1,4 +1,5 @@
-package shift
+// Package interval manipulates [save.Interval]s.
+package interval
 
 import (
 	"fmt"
@@ -8,8 +9,8 @@ import (
 
 // Flatten turns a list of "overrides" into a flat timeline.
 //
-// It treats the order of the list as the order in which shifts were added to the system.
-// Shifts added later overwrite previous shifts.
+// It treats the order of the list as the order in which intervals were added to the system.
+// Intervals added later overwrite previous intervals.
 // Flatten returns a chronologically sorted list.
 func Flatten(in []save.Interval) []save.Interval {
 	if len(in) < 2 {
@@ -19,7 +20,7 @@ func Flatten(in []save.Interval) []save.Interval {
 	var out []save.Interval
 	for _, s := range in {
 		validate(s)
-		// Find the slice bounds of the relevant, existing shifts.
+		// Find the slice bounds of the relevant, existing intervals.
 		l, r := bounds(out, s)
 		// Make a slice to splice in.
 		tosplice := combine(out[l:r], s)
@@ -27,7 +28,7 @@ func Flatten(in []save.Interval) []save.Interval {
 		out = append(out[:l], append(tosplice, out[r:]...)...)
 	}
 
-	// Merge consecutive shifts for the same person.
+	// Merge consecutive intervals for the same person.
 	out = merge(out)
 
 	return out
@@ -78,7 +79,7 @@ func combine(xs []save.Interval, y save.Interval) []save.Interval {
 	return out
 }
 
-// merge combines consecutive shifts for the same person.
+// merge combines consecutive intervals for the same person.
 func merge(xs []save.Interval) []save.Interval {
 	var out []save.Interval
 	for _, x := range xs {
@@ -120,6 +121,6 @@ func overlap(a, b save.Interval) bool {
 
 func validate(s save.Interval) {
 	if !s.StartAt.Before(s.EndBefore) {
-		panic(fmt.Sprintf("invalid shift %+v: %s >= %s", s, s.StartAt, s.EndBefore))
+		panic(fmt.Sprintf("invalid interval %+v: %s >= %s", s, s.StartAt, s.EndBefore))
 	}
 }

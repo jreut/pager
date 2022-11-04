@@ -1,4 +1,4 @@
-package shift
+package interval
 
 import (
 	"fmt"
