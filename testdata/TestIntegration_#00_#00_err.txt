@@ -1,2 +1,2 @@
-main.go:35: usage: TODO
+main.go:43: no command given: choose one of [add-person add-shift]
 exit status 1

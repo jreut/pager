@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"sort"
 	"time"
 
 	"github.com/jreut/pager/v2/pkg/save"
@@ -31,34 +33,52 @@ func init() {
 }
 
 func main() {
+	var names []string
+	for k := range cmds {
+		names = append(names, k)
+	}
+	sort.Strings(names) // sort for test determinism
+
 	if len(os.Args) <= 1 {
-		log.Fatal("usage: TODO")
+		log.Fatalf("no command given: choose one of %s", names)
 	}
 
 	db, err := save.Open(dbpath, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	q := save.New(db)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 
-	switch mode := os.Args[1]; mode {
-	case "add-person":
+	cmd, ok := cmds[os.Args[1]]
+	if !ok {
+		log.Fatalf("unhandled command %q: choose one of %s", os.Args[1], names)
+	}
+	if err := cmd(ctx, os.Args[2:], opts{
+		save.New(db),
+	}); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("ok")
+}
+
+type opts struct{ q *save.Queries }
+
+var cmds = map[string]func(context.Context, []string, opts) error{
+	"add-person": func(ctx context.Context, args []string, opts opts) error {
 		who := flag.String("who", "", "")
-		if err := flag.CommandLine.Parse(os.Args[2:]); err != nil {
-			log.Fatal(err)
+		if err := flag.CommandLine.Parse(args); err != nil {
+			return err
 		}
 		if *who == "" {
-			log.Fatal("provide -who")
+			return fmt.Errorf("provide -who")
 		}
-		if err := q.AddPerson(ctx, *who); err != nil {
-			log.Fatal(err)
-		}
-	case "add-shift":
+		return opts.q.AddPerson(ctx, *who)
+	},
+	"add-shift": func(ctx context.Context, args []string, opts opts) error {
 		var (
-			empty time.Time
+			zero  time.Time
 			start time.Time
 			end   time.Time
 		)
@@ -66,55 +86,27 @@ func main() {
 		flag.Var(timeflag{&end}, "end", "end (exclusive)")
 		dur := flag.Duration("for", 0, "duration")
 		who := flag.String("who", "", "who")
-		if err := flag.CommandLine.Parse(os.Args[2:]); err != nil {
-			log.Fatal(err)
+		if err := flag.CommandLine.Parse(args); err != nil {
+			return err
 		}
-		if start == empty {
-			log.Fatal("provide -start")
+		if start == zero {
+			return fmt.Errorf("provide -start")
 		}
 		if *who == "" {
-			log.Fatal("provide -who")
+			return fmt.Errorf("provide -who")
 		}
-		if end == empty && *dur == 0 {
-			log.Fatal("provide one of -end or -for")
+		if end == zero && *dur == 0 {
+			return fmt.Errorf("provide one of -end or -for")
 		}
 		if *dur != 0 {
 			end = start.Add(*dur)
 		}
-		if err := q.AddShift(ctx, save.AddShiftParams{
+		return opts.q.AddShift(ctx, save.AddShiftParams{
 			Person:    *who,
 			StartAt:   start,
 			EndBefore: end,
-		}); err != nil {
-			log.Fatal(err)
-		}
-
-	/*
-		case "apply":
-			var (
-				start time.Time
-				end   time.Time
-			)
-			flag.Var(&timeflag{start}, "start", "start (inclusive)")
-			flag.Var(&timeflag{end}, "end", "end (exclusive)")
-			flag.CommandLine.Parse(os.Args[2:])
-		case "report":
-			var (
-				start time.Time
-				end   time.Time
-			)
-			flag.Var(&timeflag{start}, "start", "start (inclusive)")
-			flag.Var(&timeflag{end}, "end", "end (exclusive)")
-			who := flag.String("person", "", "who")
-			flag.CommandLine.Parse(os.Args[2:])
-		case "who":
-			var at time.Time
-			flag.Var(&timeflag{at}, "at", "")
-			flag.CommandLine.Parse(os.Args[2:])
-	*/
-	default:
-		log.Fatalf("unhandled mode %q: TODO", mode)
-	}
+		})
+	},
 }
 
 type timeflag struct{ *time.Time }

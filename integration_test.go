@@ -26,6 +26,10 @@ func TestIntegration(t *testing.T) {
 			status: 1,
 		}},
 		{{
+			args:   []string{"unknown"},
+			status: 1,
+		}},
+		{{
 			args:   []string{"add-person", "-who", "alice"},
 			status: 0,
 		}},

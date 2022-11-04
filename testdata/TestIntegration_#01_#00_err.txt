@@ -1,0 +1,2 @@
+main.go:56: unhandled command "unknown": choose one of [add-person add-shift]
+exit status 1
