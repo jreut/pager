@@ -24,6 +24,11 @@ func TestIntegration(t *testing.T) {
 		t.Fatal(string(out), err)
 	}
 
+	type tc []struct {
+		args   []string
+		status int
+	}
+
 	for _, tt := range [][]struct {
 		args   []string
 		status int
@@ -36,17 +41,9 @@ func TestIntegration(t *testing.T) {
 			args:   []string{"unknown"},
 			status: 1,
 		}},
-		{{
-			args:   []string{"add-person", "-who", "alice"},
-			status: 0,
-		}},
 		{
 			{
 				args:   []string{"add-person", "-who", "alice"},
-				status: 0,
-			},
-			{
-				args:   []string{"add-interval", "-who", "alice", "-start", "2022-10-31T15:40:00.0-04:00", "-for", "24h"},
 				status: 0,
 			},
 		},
@@ -56,12 +53,56 @@ func TestIntegration(t *testing.T) {
 				status: 0,
 			},
 			{
-				args:   []string{"add-interval", "-who", "alice", "-start", "2022-10-31T15:40:00.0-04:00", "-for", "24h"},
+				args:   []string{"add-schedule", "-name", "default"},
 				status: 0,
 			},
 			{
-				args:   []string{"add-interval", "-who", "alice", "-start", "2022-11-01T09:00:00.0-04:00", "-for", "1h", "-kind", "EXCLUSION"},
+				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-10-31T15:40:00.0-04:00", "-for", "24h"},
+				status: 0,
+			},
+		},
+		{
+			{
+				args:   []string{"add-person", "-who", "alice"},
+				status: 0,
+			},
+			{
+				args:   []string{"add-schedule", "-name", "default"},
+				status: 0,
+			},
+			{
+				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-10-31T15:40:00.0-04:00", "-for", "24h"},
+				status: 0,
+			},
+			{
+				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-11-01T09:00:00.0-04:00", "-for", "1h", "-kind", "EXCLUSION"},
 				status: 17,
+			},
+		},
+		{
+			{
+				args:   []string{"add-schedule", "-name", "default"},
+				status: 0,
+			},
+			{
+				args:   []string{"add-person", "-who", "alice"},
+				status: 0,
+			},
+			{
+				args:   []string{"add-person", "-who", "bob"},
+				status: 0,
+			},
+			{
+				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-11-01T00:00:00.0Z", "-for", "24h"},
+				status: 0,
+			},
+			{
+				args:   []string{"add-interval", "-schedule", "default", "-who", "bob", "-start", "2022-11-02T00:00:00.0Z", "-for", "24h"},
+				status: 0,
+			},
+			{
+				args:   []string{"show-schedule", "-schedule", "default", "-start", "2022-11-01T00:00:00.0Z", "-for", "48h"},
+				status: 0,
 			},
 		},
 	} {

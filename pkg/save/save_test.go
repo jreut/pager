@@ -22,6 +22,8 @@ func TestAddInterval(t *testing.T) {
 	ctx := context.Background()
 	q := save.New(testdb(t, ctx))
 
+	const schedule = "default"
+	assert.Nil(t, q.AddSchedule(ctx, schedule))
 	const alice = "alice"
 	assert.Nil(t, q.AddPerson(ctx, alice))
 
@@ -48,7 +50,7 @@ func TestAddInterval(t *testing.T) {
 		Kind:      save.IntervalKindShift,
 	}))
 
-	assert.Nil(t, q.AddInterval(ctx, save.AddIntervalParams{
+	assert.Error(t, "^FOREIGN KEY constraint failed$", q.AddInterval(ctx, save.AddIntervalParams{
 		Person:    alice,
 		StartAt:   t0,
 		EndBefore: t1,
@@ -57,6 +59,15 @@ func TestAddInterval(t *testing.T) {
 
 	assert.Nil(t, q.AddInterval(ctx, save.AddIntervalParams{
 		Person:    alice,
+		Schedule:  schedule,
+		StartAt:   t0,
+		EndBefore: t1,
+		Kind:      save.IntervalKindShift,
+	}))
+
+	assert.Nil(t, q.AddInterval(ctx, save.AddIntervalParams{
+		Person:    alice,
+		Schedule:  schedule,
 		StartAt:   t0,
 		EndBefore: t1,
 		Kind:      save.IntervalKindExclusion,
@@ -65,6 +76,7 @@ func TestAddInterval(t *testing.T) {
 	// No uniqueness constraint
 	assert.Nil(t, q.AddInterval(ctx, save.AddIntervalParams{
 		Person:    alice,
+		Schedule:  schedule,
 		StartAt:   t0,
 		EndBefore: t1,
 		Kind:      save.IntervalKindExclusion,
@@ -73,45 +85,11 @@ func TestAddInterval(t *testing.T) {
 	// Backwards doesn't work
 	assert.Error(t, "CHECK constraint failed", q.AddInterval(ctx, save.AddIntervalParams{
 		Person:    alice,
+		Schedule:  schedule,
 		StartAt:   t1,
 		EndBefore: t0,
 		Kind:      save.IntervalKindExclusion,
 	}))
-}
-
-func TestListIntervals(t *testing.T) {
-	ctx := context.Background()
-	q := save.New(testdb(t, ctx))
-
-	var (
-		t0 = time.Unix(0, 0).In(time.UTC)
-		t1 = t0.Add(1 * time.Minute)
-		t2 = t0.Add(2 * time.Minute)
-		t4 = t0.Add(4 * time.Minute)
-	)
-
-	const alice = "alice"
-
-	before := []save.AddIntervalParams{
-		{Person: alice, StartAt: t0, EndBefore: t1, Kind: save.IntervalKindShift},
-		{Person: alice, StartAt: t2, EndBefore: t4, Kind: save.IntervalKindShift},
-	}
-	assert.Nil(t, q.AddPerson(ctx, alice))
-
-	for _, i := range before {
-		assert.Nil(t, q.AddInterval(ctx, i))
-	}
-
-	got, err := q.ListIntervals(ctx, save.IntervalKindExclusion)
-	assert.Nil(t, err)
-	assert.Cmp(t, []save.Interval(nil), got)
-
-	got, err = q.ListIntervals(ctx, save.IntervalKindShift)
-	assert.Nil(t, err)
-	assert.Cmp(t, []save.Interval{
-		{Person: alice, StartAt: t0, EndBefore: t1, Kind: save.IntervalKindShift},
-		{Person: alice, StartAt: t2, EndBefore: t4, Kind: save.IntervalKindShift},
-	}, got)
 }
 
 func testdb(t *testing.T, ctx context.Context) *sql.DB {

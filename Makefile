@@ -4,11 +4,11 @@ src = $(shell find . -type f -name '*.go')
 all: test
 
 .PHONY: test
-test: pkg/save
+test: pkg/save/db.go
 	go test ./...
 
 .PHONY: test/record
-test/record: pkg/save
+test/record: pkg/save/db.go
 	sh test-record go test ./...
 
 .PHONY: fmt

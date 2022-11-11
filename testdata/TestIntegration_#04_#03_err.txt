@@ -1,0 +1,1 @@
+main.go:69: conflict: cannot schedule EXCLUSION for "alice" in "default" [2022-11-01T09:00:00-04:00, 2022-11-01T10:00:00-04:00) over existing SHIFT for "alice" in "default" [2022-10-31T15:40:00-04:00, 2022-11-01T15:40:00-04:00)

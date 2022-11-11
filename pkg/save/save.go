@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"time"
 
 	_ "embed"
 
@@ -14,6 +15,11 @@ import (
 const (
 	IntervalKindShift     = "SHIFT"
 	IntervalKindExclusion = "EXCLUSION"
+)
+
+const (
+	ParticipateKindAdd    = "ADD"
+	ParticipateKindRemove = "REMOVE"
 )
 
 //go:embed schema.sql
@@ -28,5 +34,12 @@ func Open(path string, opts url.Values) (*sql.DB, error) {
 }
 
 func (i Interval) String() string {
-	return fmt.Sprintf("%s for %q [%s, %s)", i.Kind, i.Person, i.StartAt, i.EndBefore)
+	return fmt.Sprintf(
+		"%s for %q in %q [%s, %s)",
+		i.Kind,
+		i.Person,
+		i.Schedule,
+		i.StartAt.Format(time.RFC3339),
+		i.EndBefore.Format(time.RFC3339),
+	)
 }

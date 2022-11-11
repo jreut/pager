@@ -11,12 +11,13 @@ import (
 )
 
 const addInterval = `-- name: AddInterval :exec
-INSERT INTO interval(person, start_at, end_before, kind)
-VALUES (?,?,?,?)
+INSERT INTO interval(person, schedule, start_at, end_before, kind)
+VALUES (?, ?, ?, ?, ?)
 `
 
 type AddIntervalParams struct {
 	Person    string
+	Schedule  string
 	StartAt   time.Time
 	EndBefore time.Time
 	Kind      string
@@ -25,6 +26,7 @@ type AddIntervalParams struct {
 func (q *Queries) AddInterval(ctx context.Context, arg AddIntervalParams) error {
 	_, err := q.db.ExecContext(ctx, addInterval,
 		arg.Person,
+		arg.Schedule,
 		arg.StartAt,
 		arg.EndBefore,
 		arg.Kind,
@@ -33,50 +35,41 @@ func (q *Queries) AddInterval(ctx context.Context, arg AddIntervalParams) error 
 }
 
 const addPerson = `-- name: AddPerson :exec
-;
-
 INSERT INTO person(handle) VALUES (?)
 `
 
-// TODO: sqlc doesn't seem to support nested WHERE clauses for sqlite.
-// AND (
-// 	start_at >= ?
-// 	OR end_before <= ?
-// )
 func (q *Queries) AddPerson(ctx context.Context, handle string) error {
 	_, err := q.db.ExecContext(ctx, addPerson, handle)
 	return err
 }
 
-const listIntervals = `-- name: ListIntervals :many
-SELECT person, start_at, end_before, kind FROM interval
-WHERE kind = ?
+const addSchedule = `-- name: AddSchedule :exec
+INSERT INTO schedule(name) VALUES (?)
 `
 
-func (q *Queries) ListIntervals(ctx context.Context, kind string) ([]Interval, error) {
-	rows, err := q.db.QueryContext(ctx, listIntervals, kind)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Interval
-	for rows.Next() {
-		var i Interval
-		if err := rows.Scan(
-			&i.Person,
-			&i.StartAt,
-			&i.EndBefore,
-			&i.Kind,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) AddSchedule(ctx context.Context, name string) error {
+	_, err := q.db.ExecContext(ctx, addSchedule, name)
+	return err
+}
+
+const participate = `-- name: Participate :exec
+INSERT INTO participate(person, schedule, kind, at)
+VALUES (?, ?, ?, ?)
+`
+
+type ParticipateParams struct {
+	Person   string
+	Schedule string
+	Kind     string
+	At       time.Time
+}
+
+func (q *Queries) Participate(ctx context.Context, arg ParticipateParams) error {
+	_, err := q.db.ExecContext(ctx, participate,
+		arg.Person,
+		arg.Schedule,
+		arg.Kind,
+		arg.At,
+	)
+	return err
 }

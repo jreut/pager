@@ -1,1 +1,1 @@
-main.go:45: no command given: choose one of [add-interval add-person]
+main.go:48: no command given: choose one of [add-interval add-person add-schedule show-schedule]

@@ -1,1 +1,1 @@
-main.go:58: unhandled command "unknown": choose one of [add-interval add-person]
+main.go:61: unhandled command "unknown": choose one of [add-interval add-person add-schedule show-schedule]

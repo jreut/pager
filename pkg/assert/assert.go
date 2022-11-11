@@ -43,6 +43,7 @@ func Nil(t *testing.T, got interface{}) {
 }
 
 func Cmp(t *testing.T, want, got interface{}, opts ...cmp.Option) {
+	t.Helper()
 	if diff := cmp.Diff(want, got, opts...); diff != "" {
 		t.Fatalf("- want, + got:\n%s", diff)
 	}
