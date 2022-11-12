@@ -105,6 +105,28 @@ func TestIntegration(t *testing.T) {
 				status: 0,
 			},
 		},
+		{
+			{
+				args:   []string{"add-schedule", "-name=default"},
+				status: 0,
+			},
+			{
+				args:   []string{"edit", "-schedule=default", "-add=bob=2023-01-01T00:00:00.0Z", "-add=alice=2023-01-01T00:00:00.0Z"},
+				status: 0,
+			},
+			{
+				args:   []string{"add-interval", "-schedule=default", "-who=alice", "-kind=EXCLUSION", "-start=2023-01-04T00:00:00.0Z", "-end=2023-01-09T00:00:00.0Z"},
+				status: 0,
+			},
+			{
+				args:   []string{"generate", "-schedule=default", "-start=2023-01-01T00:00:00.0Z", "-end=2023-02-01T00:00:00.0Z", "-style=MondayAndFridayAtNoonEastern"},
+				status: 0,
+			},
+			{
+				args:   []string{"show-schedule", "-schedule", "default", "-start", "2022-11-01T00:00:00.0Z", "-for", "48h"},
+				status: 0,
+			},
+		},
 	} {
 		t.Run("", func(t *testing.T) {
 			dbname := filepath.Join(t.TempDir(), "db.sqlite3")
