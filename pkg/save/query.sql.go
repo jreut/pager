@@ -56,15 +56,6 @@ func (q *Queries) AddInterval(ctx context.Context, arg AddIntervalParams) error 
 	return err
 }
 
-const addPerson = `-- name: AddPerson :exec
-INSERT OR IGNORE INTO person(handle) VALUES (?)
-`
-
-func (q *Queries) AddPerson(ctx context.Context, handle string) error {
-	_, err := q.db.ExecContext(ctx, addPerson, handle)
-	return err
-}
-
 const addSchedule = `-- name: AddSchedule :exec
 INSERT INTO schedule(name) VALUES (?)
 `

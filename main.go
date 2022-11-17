@@ -84,16 +84,6 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 		}
 		return opts.q.AddSchedule(ctx, *name)
 	},
-	"add-person": func(ctx context.Context, args []string, opts opts) error {
-		who := flag.String("who", "", "")
-		if err := flag.CommandLine.Parse(args); err != nil {
-			return err
-		}
-		if *who == "" {
-			return fmt.Errorf("provide -who")
-		}
-		return opts.q.AddPerson(ctx, *who)
-	},
 	"add-interval": func(ctx context.Context, args []string, opts opts) error {
 		times := addtimeflags()
 		who := flag.String("who", "", "who")

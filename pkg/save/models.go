@@ -23,10 +23,6 @@ type Interval struct {
 	Kind      string
 }
 
-type Person struct {
-	Handle string
-}
-
 type Schedule struct {
 	Name string
 }

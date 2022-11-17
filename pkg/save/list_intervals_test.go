@@ -40,14 +40,6 @@ func TestListIntervals(t *testing.T) {
 		georgia = "georgia"
 		helen   = "helen"
 	)
-	assert.Nil(t, q.AddPerson(ctx, alice))
-	assert.Nil(t, q.AddPerson(ctx, bob))
-	assert.Nil(t, q.AddPerson(ctx, cindy))
-	assert.Nil(t, q.AddPerson(ctx, daria))
-	assert.Nil(t, q.AddPerson(ctx, evan))
-	assert.Nil(t, q.AddPerson(ctx, felix))
-	assert.Nil(t, q.AddPerson(ctx, georgia))
-	assert.Nil(t, q.AddPerson(ctx, helen))
 
 	before := []save.AddIntervalParams{
 		// t0 t1 t2 t3 t4 t5 t6 t7

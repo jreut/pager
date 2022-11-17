@@ -1,6 +1,3 @@
--- name: AddPerson :exec
-INSERT OR IGNORE INTO person(handle) VALUES (?);
-
 -- name: AddSchedule :exec
 INSERT INTO schedule(name) VALUES (?);
 

@@ -88,8 +88,6 @@ func TestShowSchedule(t *testing.T) {
 			q := save.New(testdb(t, ctx))
 			assert.Nil(t, q.AddSchedule(ctx, s1))
 			assert.Nil(t, q.AddSchedule(ctx, s2))
-			assert.Nil(t, q.AddPerson(ctx, alice))
-			assert.Nil(t, q.AddPerson(ctx, bob))
 
 			for _, i := range tt.setup {
 				assert.Nil(t, q.AddInterval(ctx, save.AddIntervalParams(i)))

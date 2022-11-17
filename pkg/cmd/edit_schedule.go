@@ -16,9 +16,6 @@ type Action struct {
 
 func EditSchedule(ctx context.Context, q *save.Queries, schedule string, actions []Action) error {
 	for _, action := range actions {
-		if err := q.AddPerson(ctx, action.Who); err != nil {
-			return fmt.Errorf("adding person %q: %w", action.Who, err)
-		}
 		if err := q.AddEvent(ctx, save.AddEventParams{
 			Person:   action.Who,
 			Schedule: schedule,

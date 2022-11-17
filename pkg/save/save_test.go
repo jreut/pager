@@ -11,14 +11,6 @@ import (
 	"github.com/jreut/pager/v2/pkg/save"
 )
 
-func TestAddPerson(t *testing.T) {
-	ctx := context.Background()
-	q := save.New(testdb(t, ctx))
-	assert.Nil(t, q.AddPerson(ctx, "alice"))
-	// AddPerson is idempotent.
-	assert.Nil(t, q.AddPerson(ctx, "alice"))
-}
-
 func TestAddInterval(t *testing.T) {
 	ctx := context.Background()
 	q := save.New(testdb(t, ctx))
@@ -26,7 +18,6 @@ func TestAddInterval(t *testing.T) {
 	const schedule = "default"
 	assert.Nil(t, q.AddSchedule(ctx, schedule))
 	const alice = "alice"
-	assert.Nil(t, q.AddPerson(ctx, alice))
 
 	t0 := time.Date(2022, 10, 31, 13, 25, 42, 12345, time.UTC)
 	t1 := time.Date(2022, 11, 3, 13, 25, 42, 12345, time.UTC)

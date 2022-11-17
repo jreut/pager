@@ -110,8 +110,6 @@ func TestAddInterval(t *testing.T) {
 			q := save.New(testdb(t, ctx))
 			const schedule = "default"
 			assert.Nil(t, q.AddSchedule(ctx, schedule))
-			assert.Nil(t, q.AddPerson(ctx, alice))
-			assert.Nil(t, q.AddPerson(ctx, bob))
 			for _, i := range tt.intervals {
 				i.Schedule = schedule
 				q.AddInterval(ctx, save.AddIntervalParams(i))

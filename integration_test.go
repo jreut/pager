@@ -43,16 +43,6 @@ func TestIntegration(t *testing.T) {
 		}},
 		{
 			{
-				args:   []string{"add-person", "-who", "alice"},
-				status: 0,
-			},
-		},
-		{
-			{
-				args:   []string{"add-person", "-who", "alice"},
-				status: 0,
-			},
-			{
 				args:   []string{"add-schedule", "-name", "default"},
 				status: 0,
 			},
@@ -62,10 +52,6 @@ func TestIntegration(t *testing.T) {
 			},
 		},
 		{
-			{
-				args:   []string{"add-person", "-who", "alice"},
-				status: 0,
-			},
 			{
 				args:   []string{"add-schedule", "-name", "default"},
 				status: 0,
@@ -82,14 +68,6 @@ func TestIntegration(t *testing.T) {
 		{
 			{
 				args:   []string{"add-schedule", "-name", "default"},
-				status: 0,
-			},
-			{
-				args:   []string{"add-person", "-who", "alice"},
-				status: 0,
-			},
-			{
-				args:   []string{"add-person", "-who", "bob"},
 				status: 0,
 			},
 			{
