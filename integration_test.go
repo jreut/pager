@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jreut/pager/v2/pkg/assert"
@@ -114,6 +116,8 @@ func TestIntegration(t *testing.T) {
 			_, err = db.ExecContext(ctx, save.Schema)
 			assert.Nil(t, err)
 
+			stdout, stderr := assert.Golden(t, "out.txt"), assert.Golden(t, "err.txt")
+
 			for _, ttt := range tt {
 				t.Run("", func(t *testing.T) {
 					cmd := exec.CommandContext(ctx, prog, ttt.args...)
@@ -121,12 +125,13 @@ func TestIntegration(t *testing.T) {
 						"DETERMINISTIC=1",
 						"DB="+dbname,
 					)
-					var stderr bytes.Buffer
-					cmd.Stdout = assert.Golden(t, "out.txt")
-					cmd.Stderr = io.MultiWriter(&stderr, assert.Golden(t, "err.txt"))
+					fmt.Fprintf(io.MultiWriter(stdout, stderr), "# %s\n", strings.Join(cmd.Args[1:], " "))
+					var buf bytes.Buffer
+					cmd.Stdout = stdout
+					cmd.Stderr = io.MultiWriter(&buf, stderr)
 					t.Log(cmd)
 					err = cmd.Run()
-					t.Log(stderr.String())
+					t.Log(buf.String())
 					if ttt.status == 0 {
 						assert.Nil(t, err)
 					} else {

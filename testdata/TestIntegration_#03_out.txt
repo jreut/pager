@@ -1,0 +1,3 @@
+# add-schedule -name default
+# add-interval -schedule default -who alice -start 2022-10-31T15:40:00-04:00 -for 24h
+# add-interval -schedule default -who alice -start 2022-11-01T09:00:00-04:00 -for 1h -kind EXCLUSION

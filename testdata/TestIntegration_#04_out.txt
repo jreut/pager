@@ -1,0 +1,7 @@
+# add-schedule -name default
+# add-interval -schedule default -who alice -start 2022-11-01T00:00:00Z -for 24h
+# add-interval -schedule default -who bob -start 2022-11-02T00:00:00Z -for 24h
+# show-schedule -schedule default -start 2022-11-01T00:00:00Z -for 48h
+start_at,end_before,person
+2022-11-01T00:00:00Z,2022-11-02T00:00:00Z,alice
+2022-11-02T00:00:00Z,2022-11-03T00:00:00Z,bob

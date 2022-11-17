@@ -1,0 +1,6 @@
+# add-schedule -name=default
+# edit -schedule=default -add=bob=2023-01-01T00:00:00Z -add=alice=2023-01-01T00:00:00Z
+# add-interval -schedule=default -who=alice -kind=EXCLUSION -start=2023-01-04T00:00:00Z -end=2023-01-09T00:00:00Z
+# generate -schedule=default -start=2023-01-01T00:00:00Z -end=2023-02-01T00:00:00Z -style=MondayAndFridayAtNoonEastern
+# show-schedule -schedule default -start 2022-11-01T00:00:00Z -for 48h
+start_at,end_before,person

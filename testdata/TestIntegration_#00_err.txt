@@ -1,1 +1,2 @@
+# 
 main.go:45: no command given: choose one of [add-interval add-schedule edit generate show-schedule]
