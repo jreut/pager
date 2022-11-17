@@ -103,7 +103,7 @@ func TestIntegration(t *testing.T) {
 				status: 0,
 			},
 			{
-				args:   []string{"show-schedule", "-schedule", "default", "-start", "2022-11-01T00:00:00Z", "-for", "48h"},
+				args:   []string{"show-schedule", "-schedule", "default", "-start=2023-01-01T00:00:00Z", "-end=2023-02-01T00:00:00Z"},
 				status: 0,
 			},
 		},

@@ -6,5 +6,5 @@ main.go:74: ok
 main.go:74: ok
 # generate -schedule=default -start=2023-01-01T00:00:00Z -end=2023-02-01T00:00:00Z -style=MondayAndFridayAtNoonEastern
 main.go:74: ok
-# show-schedule -schedule default -start 2022-11-01T00:00:00Z -for 48h
+# show-schedule -schedule default -start=2023-01-01T00:00:00Z -end=2023-02-01T00:00:00Z
 main.go:74: ok
