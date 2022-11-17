@@ -15,7 +15,8 @@ func TestAddPerson(t *testing.T) {
 	ctx := context.Background()
 	q := save.New(testdb(t, ctx))
 	assert.Nil(t, q.AddPerson(ctx, "alice"))
-	assert.Error(t, "UNIQUE constraint failed", q.AddPerson(ctx, "alice"))
+	// AddPerson is idempotent.
+	assert.Nil(t, q.AddPerson(ctx, "alice"))
 }
 
 func TestAddInterval(t *testing.T) {

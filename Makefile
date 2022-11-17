@@ -1,7 +1,7 @@
 src = $(shell find . -type f -name '*.go')
 
 .PHONY: all
-all: test
+all: test/record
 
 .PHONY: test
 test: pkg/save/db.go

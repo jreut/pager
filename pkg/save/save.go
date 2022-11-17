@@ -18,8 +18,8 @@ const (
 )
 
 const (
-	ParticipateKindAdd    = "ADD"
-	ParticipateKindRemove = "REMOVE"
+	EventKindAdd    = "ADD"
+	EventKindRemove = "REMOVE"
 )
 
 //go:embed schema.sql

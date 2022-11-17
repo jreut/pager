@@ -8,19 +8,19 @@ import (
 	"time"
 )
 
+type Event struct {
+	Person   string
+	Schedule string
+	Kind     string
+	At       time.Time
+}
+
 type Interval struct {
 	Person    string
 	Schedule  string
 	StartAt   time.Time
 	EndBefore time.Time
 	Kind      string
-}
-
-type Participate struct {
-	Person   string
-	Schedule string
-	Kind     string
-	At       time.Time
 }
 
 type Person struct {

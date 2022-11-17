@@ -6,7 +6,7 @@ CREATE TABLE schedule
 ( name TEXT PRIMARY KEY
 , CHECK ( name != '' )
 );
-CREATE TABLE participate
+CREATE TABLE event
 ( person TEXT NOT NULL
 , schedule TEXT NOT NULL
 , kind TEXT NOT NULL

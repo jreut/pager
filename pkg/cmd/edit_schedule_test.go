@@ -44,7 +44,7 @@ func TestEditSchedule(t *testing.T) {
 
 	assert.Nil(t, cmd.EditSchedule(ctx, q, s1, []cmd.Action{
 		{
-			Kind: save.ParticipateKindAdd,
+			Kind: save.EventKindAdd,
 			Who:  alice,
 			At:   t0,
 		},

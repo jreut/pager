@@ -50,14 +50,19 @@ func TestListIntervals(t *testing.T) {
 	assert.Nil(t, q.AddPerson(ctx, helen))
 
 	before := []save.AddIntervalParams{
-		{Schedule: s1, StartAt: t0, EndBefore: t1, Kind: save.IntervalKindShift, Person: alice},
-		{Schedule: s1, StartAt: t0, EndBefore: t2, Kind: save.IntervalKindShift, Person: bob},
-		{Schedule: s1, StartAt: t1, EndBefore: t4, Kind: save.IntervalKindShift, Person: cindy},
-		{Schedule: s1, StartAt: t3, EndBefore: t6, Kind: save.IntervalKindShift, Person: daria},
-		{Schedule: s1, StartAt: t5, EndBefore: t7, Kind: save.IntervalKindShift, Person: evan},
-		{Schedule: s1, StartAt: t6, EndBefore: t7, Kind: save.IntervalKindShift, Person: felix},
-		{Schedule: s1, StartAt: t2, EndBefore: t3, Kind: save.IntervalKindShift, Person: georgia},
-		{Schedule: s1, StartAt: t4, EndBefore: t5, Kind: save.IntervalKindShift, Person: helen},
+		// t0 t1 t2 t3 t4 t5 t6 t7
+		// [a-)     [d-------)
+		// [b----)        [e----)
+		//    [c-------)     [f-)
+		//       [g-)  [h-)
+		{Person: alice, StartAt: t0, EndBefore: t1, Kind: save.IntervalKindShift, Schedule: s1},
+		{Person: bob, StartAt: t0, EndBefore: t2, Kind: save.IntervalKindShift, Schedule: s1},
+		{Person: cindy, StartAt: t1, EndBefore: t4, Kind: save.IntervalKindShift, Schedule: s1},
+		{Person: daria, StartAt: t3, EndBefore: t6, Kind: save.IntervalKindShift, Schedule: s1},
+		{Person: evan, StartAt: t5, EndBefore: t7, Kind: save.IntervalKindShift, Schedule: s1},
+		{Person: felix, StartAt: t6, EndBefore: t7, Kind: save.IntervalKindShift, Schedule: s1},
+		{Person: georgia, StartAt: t2, EndBefore: t3, Kind: save.IntervalKindShift, Schedule: s1},
+		{Person: helen, StartAt: t4, EndBefore: t5, Kind: save.IntervalKindShift, Schedule: s1},
 	}
 
 	for _, i := range before {

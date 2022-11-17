@@ -10,6 +10,28 @@ import (
 	"time"
 )
 
+const addEvent = `-- name: AddEvent :exec
+INSERT INTO event(person, schedule, kind, at)
+VALUES (?, ?, ?, ?)
+`
+
+type AddEventParams struct {
+	Person   string
+	Schedule string
+	Kind     string
+	At       time.Time
+}
+
+func (q *Queries) AddEvent(ctx context.Context, arg AddEventParams) error {
+	_, err := q.db.ExecContext(ctx, addEvent,
+		arg.Person,
+		arg.Schedule,
+		arg.Kind,
+		arg.At,
+	)
+	return err
+}
+
 const addInterval = `-- name: AddInterval :exec
 INSERT INTO interval(person, schedule, start_at, end_before, kind)
 VALUES (?, ?, ?, ?, ?)
@@ -35,7 +57,7 @@ func (q *Queries) AddInterval(ctx context.Context, arg AddIntervalParams) error 
 }
 
 const addPerson = `-- name: AddPerson :exec
-INSERT INTO person(handle) VALUES (?)
+INSERT OR IGNORE INTO person(handle) VALUES (?)
 `
 
 func (q *Queries) AddPerson(ctx context.Context, handle string) error {
@@ -52,24 +74,34 @@ func (q *Queries) AddSchedule(ctx context.Context, name string) error {
 	return err
 }
 
-const participate = `-- name: Participate :exec
-INSERT INTO participate(person, schedule, kind, at)
-VALUES (?, ?, ?, ?)
+const listEvents = `-- name: ListEvents :many
+SELECT person, schedule, kind, at FROM event WHERE schedule = ? ORDER BY at ASC
 `
 
-type ParticipateParams struct {
-	Person   string
-	Schedule string
-	Kind     string
-	At       time.Time
-}
-
-func (q *Queries) Participate(ctx context.Context, arg ParticipateParams) error {
-	_, err := q.db.ExecContext(ctx, participate,
-		arg.Person,
-		arg.Schedule,
-		arg.Kind,
-		arg.At,
-	)
-	return err
+func (q *Queries) ListEvents(ctx context.Context, schedule string) ([]Event, error) {
+	rows, err := q.db.QueryContext(ctx, listEvents, schedule)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Event
+	for rows.Next() {
+		var i Event
+		if err := rows.Scan(
+			&i.Person,
+			&i.Schedule,
+			&i.Kind,
+			&i.At,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

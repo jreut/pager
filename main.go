@@ -15,19 +15,16 @@ import (
 	"time"
 
 	"github.com/jreut/pager/v2/pkg/cmd"
+	"github.com/jreut/pager/v2/pkg/global"
 	"github.com/jreut/pager/v2/pkg/save"
 )
 
 var (
-	deterministic bool
-	dbpath        = "db.sqlite3"
+	dbpath = "db.sqlite3"
 )
 
 func init() {
-	if os.Getenv("DETERMINISTIC") == "1" {
-		deterministic = true
-	}
-	if deterministic {
+	if global.Deterministic() {
 		log.SetFlags(log.Lshortfile)
 	} else {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -156,21 +153,25 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 	"edit": func(ctx context.Context, args []string, opts opts) error {
 		schedule := flag.String("schedule", "", "")
 		var actions []cmd.Action
-		flag.Var(actionsflag{save.ParticipateKindAdd, &actions}, "add", "")
-		flag.Var(actionsflag{save.ParticipateKindRemove, &actions}, "remove", "")
+		flag.Var(actionsflag{save.EventKindAdd, &actions}, "add", "")
+		flag.Var(actionsflag{save.EventKindRemove, &actions}, "remove", "")
 		if err := flag.CommandLine.Parse(args); err != nil {
 			return err
 		}
 		return cmd.EditSchedule(ctx, opts.q, *schedule, actions)
 	},
 	"generate": func(ctx context.Context, args []string, opts opts) error {
-		_ = flag.String("schedule", "", "")
-		addtimeflags()
-		_ = flag.String("style", "", "")
+		schedule := flag.String("schedule", "", "")
+		times := addtimeflags()
+		style := flag.String("style", "", "")
 		if err := flag.CommandLine.Parse(args); err != nil {
 			return err
 		}
-		return errors.New("unimplemented")
+		start, end, err := times.Times()
+		if err != nil {
+			return err
+		}
+		return cmd.Generate(ctx, opts.q, *schedule, *style, start, end)
 	},
 }
 

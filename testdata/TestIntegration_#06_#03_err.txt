@@ -1,1 +1,1 @@
-main.go:69: unimplemented
+main.go:74: ok

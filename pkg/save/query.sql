@@ -1,5 +1,5 @@
 -- name: AddPerson :exec
-INSERT INTO person(handle) VALUES (?);
+INSERT OR IGNORE INTO person(handle) VALUES (?);
 
 -- name: AddSchedule :exec
 INSERT INTO schedule(name) VALUES (?);
@@ -8,6 +8,9 @@ INSERT INTO schedule(name) VALUES (?);
 INSERT INTO interval(person, schedule, start_at, end_before, kind)
 VALUES (?, ?, ?, ?, ?);
 
--- name: Participate :exec
-INSERT INTO participate(person, schedule, kind, at)
+-- name: AddEvent :exec
+INSERT INTO event(person, schedule, kind, at)
 VALUES (?, ?, ?, ?);
+
+-- name: ListEvents :many
+SELECT * FROM event WHERE schedule = ? ORDER BY at ASC

@@ -57,7 +57,7 @@ func TestIntegration(t *testing.T) {
 				status: 0,
 			},
 			{
-				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-10-31T15:40:00.0-04:00", "-for", "24h"},
+				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-10-31T15:40:00-04:00", "-for", "24h"},
 				status: 0,
 			},
 		},
@@ -71,11 +71,11 @@ func TestIntegration(t *testing.T) {
 				status: 0,
 			},
 			{
-				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-10-31T15:40:00.0-04:00", "-for", "24h"},
+				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-10-31T15:40:00-04:00", "-for", "24h"},
 				status: 0,
 			},
 			{
-				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-11-01T09:00:00.0-04:00", "-for", "1h", "-kind", "EXCLUSION"},
+				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-11-01T09:00:00-04:00", "-for", "1h", "-kind", "EXCLUSION"},
 				status: 17,
 			},
 		},
@@ -93,15 +93,15 @@ func TestIntegration(t *testing.T) {
 				status: 0,
 			},
 			{
-				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-11-01T00:00:00.0Z", "-for", "24h"},
+				args:   []string{"add-interval", "-schedule", "default", "-who", "alice", "-start", "2022-11-01T00:00:00Z", "-for", "24h"},
 				status: 0,
 			},
 			{
-				args:   []string{"add-interval", "-schedule", "default", "-who", "bob", "-start", "2022-11-02T00:00:00.0Z", "-for", "24h"},
+				args:   []string{"add-interval", "-schedule", "default", "-who", "bob", "-start", "2022-11-02T00:00:00Z", "-for", "24h"},
 				status: 0,
 			},
 			{
-				args:   []string{"show-schedule", "-schedule", "default", "-start", "2022-11-01T00:00:00.0Z", "-for", "48h"},
+				args:   []string{"show-schedule", "-schedule", "default", "-start", "2022-11-01T00:00:00Z", "-for", "48h"},
 				status: 0,
 			},
 		},
@@ -111,19 +111,19 @@ func TestIntegration(t *testing.T) {
 				status: 0,
 			},
 			{
-				args:   []string{"edit", "-schedule=default", "-add=bob=2023-01-01T00:00:00.0Z", "-add=alice=2023-01-01T00:00:00.0Z"},
+				args:   []string{"edit", "-schedule=default", "-add=bob=2023-01-01T00:00:00Z", "-add=alice=2023-01-01T00:00:00Z"},
 				status: 0,
 			},
 			{
-				args:   []string{"add-interval", "-schedule=default", "-who=alice", "-kind=EXCLUSION", "-start=2023-01-04T00:00:00.0Z", "-end=2023-01-09T00:00:00.0Z"},
+				args:   []string{"add-interval", "-schedule=default", "-who=alice", "-kind=EXCLUSION", "-start=2023-01-04T00:00:00Z", "-end=2023-01-09T00:00:00Z"},
 				status: 0,
 			},
 			{
-				args:   []string{"generate", "-schedule=default", "-start=2023-01-01T00:00:00.0Z", "-end=2023-02-01T00:00:00.0Z", "-style=MondayAndFridayAtNoonEastern"},
+				args:   []string{"generate", "-schedule=default", "-start=2023-01-01T00:00:00Z", "-end=2023-02-01T00:00:00Z", "-style=MondayAndFridayAtNoonEastern"},
 				status: 0,
 			},
 			{
-				args:   []string{"show-schedule", "-schedule", "default", "-start", "2022-11-01T00:00:00.0Z", "-for", "48h"},
+				args:   []string{"show-schedule", "-schedule", "default", "-start", "2022-11-01T00:00:00Z", "-for", "48h"},
 				status: 0,
 			},
 		},
