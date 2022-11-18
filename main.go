@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/csv"
 	"errors"
 	"flag"
 	"fmt"
@@ -16,6 +15,8 @@ import (
 
 	"github.com/jreut/pager/v2/pkg/cmd"
 	"github.com/jreut/pager/v2/pkg/global"
+	"github.com/jreut/pager/v2/pkg/interval"
+	"github.com/jreut/pager/v2/pkg/og"
 	"github.com/jreut/pager/v2/pkg/save"
 )
 
@@ -124,21 +125,7 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 		if err != nil {
 			return err
 		}
-		w := csv.NewWriter(os.Stdout)
-		defer w.Flush()
-		if err := w.Write([]string{"start_at", "end_before", "person"}); err != nil {
-			return err
-		}
-		for _, i := range out {
-			if err := w.Write([]string{
-				i.StartAt.Format(time.RFC3339),
-				i.EndBefore.Format(time.RFC3339),
-				i.Person,
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
+		return interval.WriteCSV(os.Stdout, out)
 	},
 	"edit": func(ctx context.Context, args []string, opts opts) error {
 		schedule := flag.String("schedule", "", "")
@@ -162,6 +149,36 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 			return err
 		}
 		return cmd.Generate(ctx, opts.q, *schedule, *style, start, end)
+	},
+	"apply": func(ctx context.Context, args []string, opts opts) error {
+		f := flag.String("file", "-", "csv file containing intervals, or stdin if '-'")
+		d := flag.String("dst", "stderr", "write to this external destination")
+		schedule := flag.String("schedule", "", "")
+		if err := flag.CommandLine.Parse(args); err != nil {
+			return err
+		}
+		if *schedule == "" {
+			return fmt.Errorf("provide nonempty -schedule")
+		}
+		r := os.Stdin
+		if *f != "-" {
+			var err error
+			r, err = os.Open(*f)
+			if err != nil {
+				return err
+			}
+			defer r.Close()
+		}
+		var dst cmd.Destination
+		switch *d {
+		case "opsgenie":
+			dst = og.NewHTTPClient(og.DomainDefault, "TODO-KEY")
+		case "stderr":
+			dst = cmd.FakeDestination{Writer: os.Stderr}
+		default:
+			return fmt.Errorf("unhandled destination %q", *d)
+		}
+		return cmd.Apply(ctx, r, dst, *schedule)
 	},
 }
 

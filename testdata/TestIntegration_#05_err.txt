@@ -1,10 +1,10 @@
 # add-schedule -name=default
-main.go:74: ok
+main.go:75: ok
 # edit -schedule=default -add=bob=2023-01-01T00:00:00Z -add=alice=2023-01-01T00:00:00Z
-main.go:74: ok
+main.go:75: ok
 # add-interval -schedule=default -who=alice -kind=EXCLUSION -start=2023-01-04T00:00:00Z -end=2023-01-09T00:00:00Z
-main.go:74: ok
+main.go:75: ok
 # generate -schedule=default -start=2023-01-01T00:00:00Z -end=2023-02-01T00:00:00Z -style=MondayAndFridayAtNoonEastern
-main.go:74: ok
+main.go:75: ok
 # show-schedule -schedule default -start=2023-01-01T00:00:00Z -end=2023-02-01T00:00:00Z
-main.go:74: ok
+main.go:75: ok

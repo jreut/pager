@@ -13,11 +13,6 @@ import (
 	"github.com/jreut/pager/v2/pkg/save"
 )
 
-type Client interface {
-	Apply(context.Context, []save.Interval) error
-	List(_ context.Context, startAt, endBefore time.Time) ([]save.Interval, error)
-}
-
 const (
 	DomainDefault = "api.opsgenie.com"
 	DomainEU      = "api.eu.opsgenie.com"
@@ -30,18 +25,17 @@ const (
 // Create an "API Integration" to get a key.
 //
 // See: https://support.atlassian.com/opsgenie/docs/create-a-default-api-integration/
-func NewHTTPClient(domain, key, schedule string) Client {
+func NewHTTPClient(domain, key string) httpclient {
 	return httpclient{
-		domain:   domain,
-		key:      key,
-		schedule: schedule,
+		domain: domain,
+		key:    key,
 	}
 	// https://api.opsgenie.com/v2/schedules/:scheduleIdentifier/overrides
 	// https://api.eu.opsgenie.com/
 }
 
 type httpclient struct {
-	domain, key, schedule string
+	domain, key string
 }
 
 func (c httpclient) url(path string, query url.Values) string {
@@ -78,7 +72,7 @@ func (c httpclient) get(ctx context.Context, path string, query url.Values) (*ht
 // Apply implements [Client]
 //
 // See: https://docs.opsgenie.com/docs/schedule-override-api#create-schedule-override
-func (c httpclient) Apply(ctx context.Context, shifts []save.Interval) error {
+func (c httpclient) Apply(ctx context.Context, schedule string, shifts []save.Interval) error {
 	for _, s := range shifts {
 		data := map[string]interface{}{
 			"user": map[string]string{
@@ -88,7 +82,7 @@ func (c httpclient) Apply(ctx context.Context, shifts []save.Interval) error {
 			"startDate": strftime(s.StartAt),
 			"endDate":   strftime(s.EndBefore),
 		}
-		res, err := c.post(ctx, fmt.Sprintf("/v2/schedules/%s/overrides", c.schedule), data)
+		res, err := c.post(ctx, fmt.Sprintf("/v2/schedules/%s/overrides", schedule), data)
 		if err != nil {
 			return err
 		}
@@ -97,11 +91,6 @@ func (c httpclient) Apply(ctx context.Context, shifts []save.Interval) error {
 		}
 	}
 	return nil
-}
-
-// List implements [Client]
-func (httpclient) List(_ context.Context, startAt time.Time, endBefore time.Time) ([]save.Interval, error) {
-	panic("unimplemented")
 }
 
 func strftime(t time.Time) string {

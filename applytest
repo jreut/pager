@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -e
+
+export DETERMINISTIC=1
+
+if [ "$UPDATE_GOLDEN" = "1" ]
+then
+	go run . apply -schedule=testschedule \
+		<testdata/TestIntegration_#05_out.txt \
+		>testdata/apply.out.txt \
+		2>testdata/apply.err.txt \
+		;
+else
+  out=$(mktemp -t out.txt)
+  err=$(mktemp -t err.txt)
+	go run . apply -schedule=testschedule \
+		<testdata/TestIntegration_#05_out.txt \
+		>$out \
+		2>$err \
+		;
+	diff -u testdata/apply.out.txt $out
+	diff -u testdata/apply.err.txt $err
+fi
