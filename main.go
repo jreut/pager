@@ -40,7 +40,9 @@ func main() {
 	for k := range cmds {
 		names = append(names, k)
 	}
-	sort.Strings(names) // sort for test determinism
+	if global.Deterministic() {
+		sort.Strings(names)
+	}
 
 	if len(os.Args) <= 1 {
 		log.Fatalf("no command given: choose one of %s", names)

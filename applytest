@@ -2,6 +2,7 @@
 
 set -e
 
+# See: go doc ./pkg/global.Deterministic
 export DETERMINISTIC=1
 
 if [ "$UPDATE_GOLDEN" = "1" ]

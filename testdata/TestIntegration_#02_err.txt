@@ -1,4 +1,4 @@
 # add-schedule -name default
-main.go:75: ok
+main.go:77: ok
 # add-interval -schedule default -who alice -start 2022-10-31T15:40:00-04:00 -for 24h
-main.go:75: ok
+main.go:77: ok
