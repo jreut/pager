@@ -44,11 +44,11 @@ func ReadCSV(r io.Reader, schedule, kind string) ([]save.Interval, error) {
 		if record[0] == "start_at" {
 			continue
 		}
-		start, err := time.Parse(time.RFC3339, record[1])
+		start, err := time.Parse(time.RFC3339, record[0])
 		if err != nil {
 			return out, err
 		}
-		end, err := time.Parse(time.RFC3339, record[0])
+		end, err := time.Parse(time.RFC3339, record[1])
 		if err != nil {
 			return out, err
 		}
