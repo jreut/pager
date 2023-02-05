@@ -1,3 +1,4 @@
+# apply -schedule=testschedule
 writing intervals for schedule "testschedule"
 0: SHIFT for "alice" in "testschedule" [2023-01-03T12:00:00-05:00, 2023-01-01T00:00:00Z)
 1: SHIFT for "bob" in "testschedule" [2023-01-09T00:00:00Z, 2023-01-03T12:00:00-05:00)

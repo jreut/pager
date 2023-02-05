@@ -3,6 +3,7 @@ package main_test
 import (
 	"bytes"
 	"context"
+	"embed"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +16,9 @@ import (
 	"github.com/jreut/pager/v2/pkg/assert"
 	"github.com/jreut/pager/v2/pkg/save"
 )
+
+//go:embed fixtures/*
+var fixtures embed.FS
 
 func TestIntegration(t *testing.T) {
 	ctx := context.Background()
@@ -33,6 +37,7 @@ func TestIntegration(t *testing.T) {
 
 	for _, tt := range [][]struct {
 		args   []string
+		stdin  io.Reader
 		status int
 	}{
 		{{
@@ -107,6 +112,12 @@ func TestIntegration(t *testing.T) {
 				status: 0,
 			},
 		},
+		{
+			{
+				args:  []string{"apply", "-schedule=testschedule"},
+				stdin: fixture(t, "fixtures/apply.in.csv"),
+			},
+		},
 	} {
 		t.Run("", func(t *testing.T) {
 			dbname := filepath.Join(t.TempDir(), "db.sqlite3")
@@ -127,6 +138,7 @@ func TestIntegration(t *testing.T) {
 					)
 					fmt.Fprintf(io.MultiWriter(stdout, stderr), "# %s\n", strings.Join(cmd.Args[1:], " "))
 					var buf bytes.Buffer
+					cmd.Stdin = ttt.stdin
 					cmd.Stdout = stdout
 					cmd.Stderr = io.MultiWriter(&buf, stderr)
 					t.Log(cmd)
@@ -146,4 +158,10 @@ func TestIntegration(t *testing.T) {
 			}
 		})
 	}
+}
+
+func fixture(t *testing.T, name string) io.Reader {
+	f, err := fixtures.Open(name)
+	assert.Nil(t, err)
+	return f
 }

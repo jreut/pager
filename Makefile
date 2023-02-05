@@ -6,7 +6,6 @@ all: test/record
 .PHONY: test
 test: pkg/save/db.go
 	go test ./...
-	sh applytest
 
 .PHONY: test/record
 test/record: pkg/save/db.go

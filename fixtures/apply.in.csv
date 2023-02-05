@@ -1,0 +1,15 @@
+# add-schedule -name=default
+# edit -schedule=default -add=bob=2023-01-01T00:00:00Z -add=alice=2023-01-01T00:00:00Z
+# add-interval -schedule=default -who=alice -kind=EXCLUSION -start=2023-01-04T00:00:00Z -end=2023-01-09T00:00:00Z
+# generate -schedule=default -start=2023-01-01T00:00:00Z -end=2023-02-01T00:00:00Z -style=MondayAndFridayAtNoonEastern
+# show-schedule -schedule default -start=2023-01-01T00:00:00Z -end=2023-02-01T00:00:00Z
+start_at,end_before,person
+2023-01-01T00:00:00Z,2023-01-03T12:00:00-05:00,alice
+2023-01-03T12:00:00-05:00,2023-01-09T00:00:00Z,bob
+2023-01-09T00:00:00Z,2023-01-09T12:00:00-05:00,alice
+2023-01-09T12:00:00-05:00,2023-01-13T12:00:00-05:00,bob
+2023-01-13T12:00:00-05:00,2023-01-16T12:00:00-05:00,alice
+2023-01-16T12:00:00-05:00,2023-01-20T12:00:00-05:00,bob
+2023-01-20T12:00:00-05:00,2023-01-23T12:00:00-05:00,alice
+2023-01-23T12:00:00-05:00,2023-01-27T12:00:00-05:00,bob
+2023-01-27T12:00:00-05:00,2023-02-01T00:00:00Z,alice
