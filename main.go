@@ -30,7 +30,7 @@ var (
 
 func init() {
 	if global.Deterministic() {
-		log.SetFlags(log.Lshortfile)
+		log.SetFlags(0)
 	} else {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}

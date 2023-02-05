@@ -1,2 +1,2 @@
 # unknown
-main.go:65: unhandled command "unknown": choose one of [add-interval add-schedule apply edit generate help import show-schedule]
+unhandled command "unknown": choose one of [add-interval add-schedule apply edit generate help import show-schedule]
