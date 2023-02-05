@@ -157,6 +157,7 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 		f := flag.String("file", "-", "csv file containing intervals, or stdin if '-'")
 		d := flag.String("dst", "stderr", "write to this external destination")
 		schedule := flag.String("schedule", "", "")
+		debug := flag.Bool("debug", false, "")
 		if err := flag.CommandLine.Parse(args); err != nil {
 			return err
 		}
@@ -175,7 +176,7 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 		var dst cmd.Destination
 		switch *d {
 		case "opsgenie":
-			dst = og.NewHTTPClient(og.DomainDefault, "TODO-KEY")
+			dst = og.NewHTTPClient(og.DomainDefault, "TODO-KEY", *debug)
 		case "stderr":
 			dst = cmd.FakeDestination{Writer: os.Stderr}
 		default:
