@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -8,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"sort"
 	"strings"
@@ -41,12 +44,25 @@ func main() {
 	for k := range cmds {
 		names = append(names, k)
 	}
+	names = append(names, "help")
 	if global.Deterministic() {
 		sort.Strings(names)
 	}
 
 	if len(os.Args) <= 1 {
 		log.Fatalf("no command given: choose one of %s", names)
+	}
+
+	if os.Args[1] == "help" || os.Args[1] == "-h" {
+		if err := help(names); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+
+	command, ok := cmds[os.Args[1]]
+	if !ok {
+		log.Fatalf("unhandled command %q: choose one of %s", os.Args[1], names)
 	}
 
 	db, err := save.Open(dbpath, nil)
@@ -57,12 +73,8 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 
-	command, ok := cmds[os.Args[1]]
-	if !ok {
-		log.Fatalf("unhandled command %q: choose one of %s", os.Args[1], names)
-	}
 	err = save.WithTx(db, func(tx *sql.Tx) error {
-		return command(ctx, os.Args[2:], opts{
+		return command.f(ctx, os.Args[2:], opts{
 			q: save.New(tx),
 		})
 	})
@@ -80,109 +92,167 @@ func main() {
 
 type opts struct{ q *save.Queries }
 
-var cmds = map[string]func(context.Context, []string, opts) error{
-	"add-schedule": func(ctx context.Context, args []string, opts opts) error {
-		name := flag.String("name", "", "")
-		if err := flag.CommandLine.Parse(args); err != nil {
-			return err
+type command struct {
+	help string
+	f    func(context.Context, []string, opts) error
+}
+
+func help(names []string) error {
+	// Iterate over this slice of names instead of cmds directly.
+	// This lets us pass a sorted list during tests.
+	for _, k := range names {
+		if k == "help" {
+			continue
 		}
-		return opts.q.AddSchedule(ctx, *name)
+		v, ok := cmds[k]
+		if !ok {
+			return fmt.Errorf("no command found for %q", k)
+		}
+		if v.help == "" {
+			return fmt.Errorf("TODO: %q is undocumented", k)
+		}
+		var buf bytes.Buffer
+		cmd := exec.Command(os.Args[0], k, "-h")
+		cmd.Stdout = &buf
+		cmd.Stderr = &buf
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("could not generate help for %q: %w\nout=%s", k, err, buf.String())
+		}
+		s := bufio.NewScanner(&buf)
+		for s.Scan() {
+			if strings.HasPrefix(s.Text(), "Usage of") {
+				continue
+			}
+			v.help += "\n  " + s.Text()
+		}
+		if s.Err() != nil {
+			return fmt.Errorf("could not scan output of %q -h: %w", k, s.Err())
+		}
+		fmt.Fprintf(os.Stderr, "%s\n  %s\n", k, v.help)
+	}
+	return nil
+}
+
+var cmds = map[string]command{
+	"add-schedule": {
+		help: "Initialize a new schedule",
+		f: func(ctx context.Context, args []string, opts opts) error {
+			name := flag.String("name", "", "")
+			if err := flag.CommandLine.Parse(args); err != nil {
+				return err
+			}
+			return opts.q.AddSchedule(ctx, *name)
+		},
 	},
-	"add-interval": func(ctx context.Context, args []string, opts opts) error {
-		times := cli.TimeFlags()
-		who := flag.String("who", "", "who")
-		kind := flag.String("kind", save.IntervalKindShift, fmt.Sprintf("one of %s", []string{save.IntervalKindShift, save.IntervalKindExclusion}))
-		schedule := flag.String("schedule", "", "")
-		if err := flag.CommandLine.Parse(args); err != nil {
-			return err
-		}
-		if *who == "" {
-			return fmt.Errorf("provide -who")
-		}
-		if !(*kind == save.IntervalKindExclusion || *kind == save.IntervalKindShift) {
-			return fmt.Errorf("provide -kind=%s or -kind=%s", save.IntervalKindShift, save.IntervalKindExclusion)
-		}
-		start, end, err := times.Times()
-		if err != nil {
-			return err
-		}
-		return cmd.AddInterval(ctx, opts.q, save.AddIntervalParams{
-			Person:    *who,
-			Schedule:  *schedule,
-			StartAt:   start,
-			EndBefore: end,
-			Kind:      *kind,
-		})
-	},
-	"show-schedule": func(ctx context.Context, args []string, opts opts) error {
-		schedule := flag.String("schedule", "", "")
-		times := cli.TimeFlags()
-		if err := flag.CommandLine.Parse(args); err != nil {
-			return err
-		}
-		start, end, err := times.Times()
-		if err != nil {
-			return err
-		}
-		out, err := cmd.ShowSchedule(ctx, opts.q, *schedule, start, end)
-		if err != nil {
-			return err
-		}
-		return interval.WriteCSV(os.Stdout, out)
-	},
-	"edit": func(ctx context.Context, args []string, opts opts) error {
-		schedule := flag.String("schedule", "", "")
-		var actions []cmd.Action
-		flag.Var(actionsflag{save.EventKindAdd, &actions}, "add", "")
-		flag.Var(actionsflag{save.EventKindRemove, &actions}, "remove", "")
-		if err := flag.CommandLine.Parse(args); err != nil {
-			return err
-		}
-		return cmd.EditSchedule(ctx, opts.q, *schedule, actions)
-	},
-	"generate": func(ctx context.Context, args []string, opts opts) error {
-		schedule := flag.String("schedule", "", "")
-		times := cli.TimeFlags()
-		style := flag.String("style", "", "")
-		if err := flag.CommandLine.Parse(args); err != nil {
-			return err
-		}
-		start, end, err := times.Times()
-		if err != nil {
-			return err
-		}
-		return cmd.Generate(ctx, opts.q, *schedule, *style, start, end)
-	},
-	"apply": func(ctx context.Context, args []string, opts opts) error {
-		f := flag.String("file", "-", "csv file containing intervals, or stdin if '-'")
-		d := flag.String("dst", "stderr", "write to this external destination")
-		schedule := flag.String("schedule", "", "")
-		debug := flag.Bool("debug", false, "")
-		if err := flag.CommandLine.Parse(args); err != nil {
-			return err
-		}
-		if *schedule == "" {
-			return fmt.Errorf("provide nonempty -schedule")
-		}
-		r := os.Stdin
-		if *f != "-" {
-			var err error
-			r, err = os.Open(*f)
+	"add-interval": {
+		help: "Add an ad hoc shift or an exclusion to the schedule. This is useful for things like covering someone for an hour.",
+		f: func(ctx context.Context, args []string, opts opts) error {
+			times := cli.TimeFlags()
+			who := flag.String("who", "", "who")
+			kind := flag.String("kind", save.IntervalKindShift, fmt.Sprintf("one of %s", []string{save.IntervalKindShift, save.IntervalKindExclusion}))
+			schedule := flag.String("schedule", "", "")
+			if err := flag.CommandLine.Parse(args); err != nil {
+				return err
+			}
+			if *who == "" {
+				return fmt.Errorf("provide -who")
+			}
+			if !(*kind == save.IntervalKindExclusion || *kind == save.IntervalKindShift) {
+				return fmt.Errorf("provide -kind=%s or -kind=%s", save.IntervalKindShift, save.IntervalKindExclusion)
+			}
+			start, end, err := times.Times()
 			if err != nil {
 				return err
 			}
-			defer r.Close()
-		}
-		var dst cmd.Destination
-		switch *d {
-		case "opsgenie":
-			dst = og.NewHTTPClient(og.DomainDefault, "TODO-KEY", *debug)
-		case "stderr":
-			dst = cmd.FakeDestination{Writer: os.Stderr}
-		default:
-			return fmt.Errorf("unhandled destination %q", *d)
-		}
-		return cmd.Apply(ctx, r, dst, *schedule)
+			return cmd.AddInterval(ctx, opts.q, save.AddIntervalParams{
+				Person:    *who,
+				Schedule:  *schedule,
+				StartAt:   start,
+				EndBefore: end,
+				Kind:      *kind,
+			})
+		},
+	},
+	"show-schedule": {
+		help: "Print the schedule for the given time interval as a CSV.",
+		f: func(ctx context.Context, args []string, opts opts) error {
+			schedule := flag.String("schedule", "", "")
+			times := cli.TimeFlags()
+			if err := flag.CommandLine.Parse(args); err != nil {
+				return err
+			}
+			start, end, err := times.Times()
+			if err != nil {
+				return err
+			}
+			out, err := cmd.ShowSchedule(ctx, opts.q, *schedule, start, end)
+			if err != nil {
+				return err
+			}
+			return interval.WriteCSV(os.Stdout, out)
+		},
+	},
+	"edit": {
+		help: "Add or remove people from a schedule. Adding a person makes them eligible for shifts generated by `generate`, and removing them does the opposite.",
+		f: func(ctx context.Context, args []string, opts opts) error {
+			schedule := flag.String("schedule", "", "")
+			var actions []cmd.Action
+			flag.Var(actionsflag{save.EventKindAdd, &actions}, "add", "")
+			flag.Var(actionsflag{save.EventKindRemove, &actions}, "remove", "")
+			if err := flag.CommandLine.Parse(args); err != nil {
+				return err
+			}
+			return cmd.EditSchedule(ctx, opts.q, *schedule, actions)
+		}},
+	"generate": {
+		help: "Generate shifts for a schedule",
+		f: func(ctx context.Context, args []string, opts opts) error {
+			schedule := flag.String("schedule", "", "")
+			times := cli.TimeFlags()
+			style := flag.String("style", "", "")
+			if err := flag.CommandLine.Parse(args); err != nil {
+				return err
+			}
+			start, end, err := times.Times()
+			if err != nil {
+				return err
+			}
+			return cmd.Generate(ctx, opts.q, *schedule, *style, start, end)
+		},
+	},
+	"apply": {
+		help: "Write the schedule to the pager provider.",
+		f: func(ctx context.Context, args []string, opts opts) error {
+			f := flag.String("file", "-", "csv file containing intervals, or stdin if '-'")
+			d := flag.String("dst", "stderr", "write to this external destination")
+			schedule := flag.String("schedule", "", "")
+			debug := flag.Bool("debug", false, "")
+			if err := flag.CommandLine.Parse(args); err != nil {
+				return err
+			}
+			if *schedule == "" {
+				return fmt.Errorf("provide nonempty -schedule")
+			}
+			r := os.Stdin
+			if *f != "-" {
+				var err error
+				r, err = os.Open(*f)
+				if err != nil {
+					return err
+				}
+				defer r.Close()
+			}
+			var dst cmd.Destination
+			switch *d {
+			case "opsgenie":
+				dst = og.NewHTTPClient(og.DomainDefault, "TODO-KEY", *debug)
+			case "stderr":
+				dst = cmd.FakeDestination{Writer: os.Stderr}
+			default:
+				return fmt.Errorf("unhandled destination %q", *d)
+			}
+			return cmd.Apply(ctx, r, dst, *schedule)
+		},
 	},
 }
 

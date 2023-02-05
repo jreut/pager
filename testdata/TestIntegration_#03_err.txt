@@ -1,6 +1,6 @@
 # add-schedule -name default
-main.go:78: ok
+main.go:90: ok
 # add-interval -schedule default -who alice -start 2022-10-31T15:40:00-04:00 -for 24h
-main.go:78: ok
+main.go:90: ok
 # add-interval -schedule default -who alice -start 2022-11-01T09:00:00-04:00 -for 1h -kind EXCLUSION
-main.go:70: conflict: cannot schedule EXCLUSION for "alice" in "default" [2022-11-01T09:00:00-04:00, 2022-11-01T10:00:00-04:00) over existing SHIFT for "alice" in "default" [2022-10-31T15:40:00-04:00, 2022-11-01T15:40:00-04:00)
+main.go:82: conflict: cannot schedule EXCLUSION for "alice" in "default" [2022-11-01T09:00:00-04:00, 2022-11-01T10:00:00-04:00) over existing SHIFT for "alice" in "default" [2022-10-31T15:40:00-04:00, 2022-11-01T15:40:00-04:00)

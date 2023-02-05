@@ -118,6 +118,14 @@ func TestIntegration(t *testing.T) {
 				stdin: fixture(t, "fixtures/apply.in.csv"),
 			},
 		},
+		{{
+			args:   []string{"-h"},
+			status: 0,
+		}},
+		{{
+			args:   []string{"help"},
+			status: 0,
+		}},
 	} {
 		t.Run("", func(t *testing.T) {
 			dbname := filepath.Join(t.TempDir(), "db.sqlite3")
