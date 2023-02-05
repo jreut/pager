@@ -115,7 +115,7 @@ func TestAddInterval(t *testing.T) {
 				q.AddInterval(ctx, save.AddIntervalParams(i))
 			}
 			tt.arg.Schedule = schedule
-			err := cmd.AddInterval(ctx, q, tt.arg)
+			err := cmd.AddInterval(ctx, q, tt.arg, false)
 			if tt.err == "" {
 				assert.Nil(t, err)
 			} else {

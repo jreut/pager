@@ -47,6 +47,12 @@ generate
       	start (inclusive) (default 0001-01-01T00:00:00Z)
     -style string
       	
+import
+  Overwrite the schedule with the given CSV of shifts.
+    -file string
+      	csv file containing intervals, or stdin if '-' (default "-")
+    -schedule string
+      	
 show-schedule
   Print the schedule for the given time interval as a CSV.
     -end value

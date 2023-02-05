@@ -170,7 +170,7 @@ var cmds = map[string]command{
 				StartAt:   start,
 				EndBefore: end,
 				Kind:      *kind,
-			})
+			}, false)
 		},
 	},
 	"show-schedule": {
@@ -218,6 +218,38 @@ var cmds = map[string]command{
 				return err
 			}
 			return cmd.Generate(ctx, opts.q, *schedule, *style, start, end)
+		},
+	},
+	"import": {
+		help: "Overwrite the schedule with the given CSV of shifts.",
+		f: func(ctx context.Context, args []string, opts opts) error {
+			f := flag.String("file", "-", "csv file containing intervals, or stdin if '-'")
+			schedule := flag.String("schedule", "", "")
+			if err := flag.CommandLine.Parse(args); err != nil {
+				return err
+			}
+			if *schedule == "" {
+				return fmt.Errorf("provide nonempty -schedule")
+			}
+			r := os.Stdin
+			if *f != "-" {
+				var err error
+				r, err = os.Open(*f)
+				if err != nil {
+					return err
+				}
+				defer r.Close()
+			}
+			is, err := interval.ReadCSV(r, *schedule, save.IntervalKindShift)
+			if err != nil {
+				return err
+			}
+			for i := range is {
+				if err := cmd.AddInterval(ctx, opts.q, save.AddIntervalParams(is[i]), true); err != nil {
+					return fmt.Errorf("AddInterval[%d]: %w\n%s", i, err, is[i])
+				}
+			}
+			return nil
 		},
 	},
 	"apply": {

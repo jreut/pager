@@ -80,7 +80,7 @@ func Generate(ctx context.Context, q *save.Queries, schedule string, style strin
 		}
 		// Bypass cmd.AddInterval's conflict checks.
 		// We fix any exclusions for this person later in this function.
-		if err := q.AddInterval(ctx, params); err != nil {
+		if err := AddInterval(ctx, q, params, true); err != nil {
 			return fmt.Errorf("inserting interval %+v: %w", params, err)
 		}
 		exclusions, err := q.ListIntervals(ctx, save.ListIntervalsParams{
@@ -105,7 +105,7 @@ func Generate(ctx context.Context, q *save.Queries, schedule string, style strin
 					EndBefore: e.EndBefore,
 					Kind:      save.IntervalKindShift,
 				}
-				if err := AddInterval(ctx, q, params); err != nil {
+				if err := AddInterval(ctx, q, params, false); err != nil {
 					return fmt.Errorf("inserting interval %+v: %w", params, err)
 				}
 			}
