@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jreut/pager/v2/pkg/cli"
 	"github.com/jreut/pager/v2/pkg/cmd"
 	"github.com/jreut/pager/v2/pkg/global"
 	"github.com/jreut/pager/v2/pkg/interval"
@@ -88,7 +89,7 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 		return opts.q.AddSchedule(ctx, *name)
 	},
 	"add-interval": func(ctx context.Context, args []string, opts opts) error {
-		times := addtimeflags()
+		times := cli.TimeFlags()
 		who := flag.String("who", "", "who")
 		kind := flag.String("kind", save.IntervalKindShift, fmt.Sprintf("one of %s", []string{save.IntervalKindShift, save.IntervalKindExclusion}))
 		schedule := flag.String("schedule", "", "")
@@ -115,7 +116,7 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 	},
 	"show-schedule": func(ctx context.Context, args []string, opts opts) error {
 		schedule := flag.String("schedule", "", "")
-		times := addtimeflags()
+		times := cli.TimeFlags()
 		if err := flag.CommandLine.Parse(args); err != nil {
 			return err
 		}
@@ -141,7 +142,7 @@ var cmds = map[string]func(context.Context, []string, opts) error{
 	},
 	"generate": func(ctx context.Context, args []string, opts opts) error {
 		schedule := flag.String("schedule", "", "")
-		times := addtimeflags()
+		times := cli.TimeFlags()
 		style := flag.String("style", "", "")
 		if err := flag.CommandLine.Parse(args); err != nil {
 			return err
@@ -208,49 +209,4 @@ func (f actionsflag) Set(v string) error {
 
 func (f actionsflag) String() string {
 	return fmt.Sprintf("%s: %s", f.kind, f.val)
-}
-
-func addtimeflags() *timeflags {
-	var out timeflags
-	flag.Var(timeflag{&out.start}, "start", "start (inclusive)")
-	flag.Var(timeflag{&out.end}, "end", "end (exclusive)")
-	flag.DurationVar(&out.dur, "for", 0, "duration")
-	return &out
-}
-
-type timeflags struct {
-	start, end time.Time
-	dur        time.Duration
-}
-
-func (f timeflags) Times() (start, end time.Time, err error) {
-	var zero time.Time
-	if f.start == zero {
-		return zero, zero, fmt.Errorf("provide -start")
-	}
-	if (f.end == zero) == (f.dur == 0) {
-		return zero, zero, fmt.Errorf("provide one of -end or -for")
-	}
-	if f.dur != 0 {
-		return f.start, f.start.Add(f.dur), nil
-	}
-	return f.start, f.end, nil
-}
-
-type timeflag struct{ *time.Time }
-
-func (f timeflag) Set(v string) error {
-	out, err := time.Parse(time.RFC3339, v)
-	if err != nil {
-		return err
-	}
-	*f.Time = out
-	return nil
-}
-
-func (f timeflag) String() string {
-	if f.Time == nil {
-		return "<nil>"
-	}
-	return f.Format(time.RFC3339)
 }

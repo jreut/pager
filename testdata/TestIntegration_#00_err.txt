@@ -1,2 +1,2 @@
 # 
-main.go:48: no command given: choose one of [add-interval add-schedule apply edit generate show-schedule]
+main.go:49: no command given: choose one of [add-interval add-schedule apply edit generate show-schedule]

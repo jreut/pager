@@ -1,8 +1,8 @@
 # add-schedule -name default
-main.go:77: ok
+main.go:78: ok
 # add-interval -schedule default -who alice -start 2022-11-01T00:00:00Z -for 24h
-main.go:77: ok
+main.go:78: ok
 # add-interval -schedule default -who bob -start 2022-11-02T00:00:00Z -for 24h
-main.go:77: ok
+main.go:78: ok
 # show-schedule -schedule default -start 2022-11-01T00:00:00Z -for 48h
-main.go:77: ok
+main.go:78: ok
