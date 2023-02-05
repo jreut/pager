@@ -50,7 +50,7 @@ func bounds(xs []save.Interval, y save.Interval) (int, int) {
 			break
 		}
 	}
-	for r = len(xs); r >= 0; r-- {
+	for r = len(xs); r > 0; r-- {
 		if xs[r-1].StartAt.Before(y.EndBefore) {
 			break
 		}

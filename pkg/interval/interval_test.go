@@ -200,6 +200,13 @@ func TestBounds(t *testing.T) {
 			y:     save.Interval{StartAt: t1, EndBefore: t3},
 			wantl: 1, wantr: 3,
 		},
+		{
+			xs: []save.Interval{
+				{StartAt: t1, EndBefore: t2},
+			},
+			y:     save.Interval{StartAt: t0, EndBefore: t1},
+			wantl: 0, wantr: 0,
+		},
 	} {
 		t.Run("", func(t *testing.T) {
 			gotl, gotr := bounds(tt.xs, tt.y)
